@@ -1,0 +1,246 @@
+# all about make file
+# target: dependencies
+# [tab] system command
+
+# target is the name of the file that you want to create
+# dependencies are the files that are used to create the target
+# system command is the command used to create the target
+
+# can have varaiables
+# VAR = value
+# $(VAR) to use the variable
+
+# can have comments
+# start with #
+
+# can have multiple targets
+# target1 target2: dependencies
+# [tab] system command
+
+# can have multiple dependencies
+# target: dependency1 dependency2
+# [tab] system command
+
+# can have multiple system commands
+# target: dependencies
+# [tab] system command1
+# [tab] system command2
+
+# can have wildcards
+# target: *.c
+# [tab] system command
+
+# Phony targets are targets that are not files
+# .PHONY: clean
+# clean:
+# 	rm -f *.o
+
+# can have default target
+# .DEFAULT: target
+# target: dependencies
+# [tab] system command
+
+# can have conditional statements
+# ifeq (condition, condition)
+# target: dependencies
+# [tab] system command
+# else
+# target: dependencies
+# [tab] system command
+# endif
+
+# can have functions
+# target: dependencies
+# [tab] $(function_name)
+
+# can have include
+# include filename
+
+# can have automatic variables
+# $@ is the target
+# $< is the first dependency
+# $^ is all dependencies
+
+# can have pattern rules
+# %.o: %.c
+# [tab] system command
+
+# can have implicit rules
+# target: dependencies
+# [tab] system command
+
+# can have suffix rules
+# .c.o:
+# [tab] system command
+
+# can have static pattern rules
+# target: dependencies
+# [tab] system command
+
+# can have order-only prerequisites
+# target: dependencies | order-only
+# [tab] system command
+
+# can have multiple lines
+# target: dependencies
+# [tab] system command 
+# [tab] system command
+
+# variables can be used to store system commands or dependencies or targets or flags or anything or configuration or configuration flags or conditional statements or functions or anything
+
+# this languauge is similar to shell scripting
+
+
+
+# Default target is the target that is executed when make is called without any arguments
+# .DEFAULT: all
+
+# How Execution Works in a Makefile:-
+# Target and Dependency Evaluation:
+# When you run make, it first determines which target (e.g., an executable or object file) you want to build.
+# The Makefile defines rules like target: dependencies, which specify that the target depends on certain files (dependencies).
+# For each target, make checks if its dependencies are up to date. If any dependency is newer than the target, or if the target doesn't exist, make will execute the commands to update the target.
+# Command Execution:
+# If a target is out of date, make will execute the commands associated with the rule for that target.
+# These commands are executed sequentially within each rule, but only for the targets that need to be rebuilt (because their dependencies are out of date or missing).
+# Parallel Execution:
+# By default, make executes the commands for different targets sequentially. However, you can specify parallel execution of independent tasks using the -j flag (e.g., make -j4), which will allow make to run multiple commands at the same time, as long as those commands don't depend on each other.
+
+
+# CC = gcc
+# CFLAGS = -Wall -g
+# LDFLAGS = -lm
+# SRC = main.c helper.c
+# OBJ = main.o helper.o
+# TARGET = myprogram
+
+# # Rule to link object files and create the executable
+# $(TARGET): $(OBJ)
+# 	echo "Linking $(TARGET)"
+# 	$(CC) $(OBJ) $(LDFLAGS) -o $(TARGET)
+
+# # Rule to compile main.c to main.o
+# main.o: main.c
+# 	echo "Compiling main.c"
+# 	$(CC) $(CFLAGS) -c main.c
+
+# # Rule to compile helper.c to helper.o
+# helper.o: helper.c
+# 	echo "Compiling helper.c"
+# 	$(CC) $(CFLAGS) -c helper.c
+
+# # Clean up
+# clean:
+# 	echo "Cleaning up"
+# 	rm -f $(OBJ) $(TARGET)
+
+
+# Explanation of Execution:
+# Default Target: When you run make, it will build the first target (myprogram), which depends on main.o and helper.o.
+
+# Dependency Check:
+
+# make checks if main.o and helper.o are up to date. If they are not, it will execute the rules to compile main.c and helper.c into object files.
+# Sequential Execution:
+
+# make will first run the command to compile main.c into main.o (because main.o is out of date).
+# Then, it will run the command to compile helper.c into helper.o.
+# Linking:
+
+# After both object files are up to date, make will run the linking command to create the final executable myprogram.
+# If you run the command make, the output would look something like:
+
+# bash
+# Copy
+# Edit
+# Compiling main.c
+# Compiling helper.c
+# Linking myprogram
+# This shows that the commands inside each rule are executed sequentially for each target.
+
+# Sequential vs Parallel Execution:
+# Sequential Execution: By default, make executes each command for a target one after the other.
+# Parallel Execution: If you run make -j4, make will try to run up to 4 independent jobs in parallel, as long as their dependencies don't overlap. For example, if main.o and helper.o don't depend on each other, make might compile both in parallel.
+# bash
+# Copy
+# Edit
+# make -j4
+
+# Types of Object Files in Detail:
+# Relocatable Object File:
+
+# This file contains machine code but is not yet ready to execute.
+# It may reference functions or variables from other object files.
+# It's typically used as an intermediate step between compiling and linking.
+# Executable Object File:
+
+# This is the final linked result of combining relocatable object files into a program that can be run by the operating system.
+# The executable file contains all the code, data, and metadata required to execute the program.
+# Shared Object File:
+
+# This file contains code and data that can be loaded and used by multiple programs at runtime.
+# It can be dynamically linked by the dynamic linker when the program starts, providing flexibility and memory efficiency.
+# Shared object files are typically used for shared libraries, allowing multiple programs to access the same code without duplicating it.
+
+# Compiling:
+
+# The compiler takes source code (e.g., main.c) and generates a relocatable object file (main.o).
+# This file contains machine code but is not an executable yet.
+
+# Linking:
+# The linker takes one or more relocatable object files (e.g., main.o, helper.o) and resolves references between them, producing an executable object file (myprogram).
+# The linker can also link with shared object files to include external libraries or dependencies.
+
+
+# How Shared Object Files Are Produced:
+# Shared object files (commonly with a .so extension on Linux or .dll on Windows) are generated during the linking step, but with specific options that tell the linker to create a shared object instead of a static executable.
+# Here’s how this happens in the context of both compiling and linking:
+
+# 1. Compiling:
+# First, you compile the source code as usual, just like you would when creating an executable. However, during the compilation step, you might want to generate position-independent code (PIC), which is necessary for shared libraries (because shared libraries need to be loaded into any memory address).
+
+# For example:
+
+# bash
+# Copy
+# Edit
+# gcc -fPIC -c mylib.c -o mylib.o
+# The -fPIC flag tells the compiler to produce position-independent code.
+# The -c flag tells the compiler to just compile the source code and not link.
+# This generates an object file (mylib.o) that contains machine code but cannot be executed directly. It’s now ready to be linked into a shared object.
+
+# 2. Linking:
+# After compiling, the next step is linking. To produce a shared object file, the linker is instructed to create a shared object instead of an executable. You can do this by using the -shared flag.
+
+# For example:
+
+# bash
+# Copy
+# Edit
+# gcc -shared -o libmylib.so mylib.o
+# The -shared flag tells the linker to create a shared object file (libmylib.so) from the object file (mylib.o).
+# The resulting libmylib.so file is a shared object that can be dynamically linked at runtime by executables or other shared objects.
+
+# When to Use Shared Objects:
+# Shared Libraries: Shared object files are typically used to provide reusable code that multiple programs can load dynamically, saving memory and storage.
+# Dynamic Linking: Instead of linking static libraries at compile-time, shared object files are linked at runtime when an application is loaded into memory.
+
+# Executable using Shared Object File: You can link an executable program with a shared object file at runtime using the -l option (for shared libraries). The executable does not embed the shared library's code but loads it when the program is run.
+
+# you have a shared library called libmath.so that contains functions like add() and subtract(). To create an executable that uses this shared library:
+
+# Compile the source code (just like with regular object files):
+
+# bash
+# Copy
+# Edit
+# gcc -c main.c -o main.o
+# Link the object file with the shared library:
+
+# bash
+# Copy
+# Edit
+# gcc main.o -L/path/to/library -lmath -o myprogram
+# -L/path/to/library: Specifies the directory where libmath.so is located.
+# -lmath: Links to the shared object file libmath.so (the lib prefix and .so extension are implied).
+# In this case, the shared object libmath.so is dynamically linked to the executable myprogram during runtime. When myprogram starts, the operating system's dynamic linker (such as ld.so on Linux) loads libmath.so into memory.

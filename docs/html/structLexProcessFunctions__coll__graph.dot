@@ -1,0 +1,23 @@
+digraph "LexProcessFunctions"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="LexProcessFunctions",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next_char\npeek_char\npush_char" ,fontname="Helvetica"];
+  Node2 [label="LexProcess",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structLexProcess.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compiler" ,fontname="Helvetica"];
+  Node3 [label="CompileProcess",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structCompileProcess.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" position" ,fontname="Helvetica"];
+  Node4 [label="PositionInFile",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structPositionInFile.html",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" node_tree_vector\nnode_vector\ntoken_vector" ,fontname="Helvetica"];
+  Node5 [label="DynamicVector",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structDynamicVector.html",tooltip=" "];
+  Node5 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" saved_states" ,fontname="Helvetica"];
+  Node6 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" input_file" ,fontname="Helvetica"];
+  Node6 [label="CompileProcess::CompileProcess\lInputFile",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structCompileProcess_1_1CompileProcessInputFile.html",tooltip=" "];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" position" ,fontname="Helvetica"];
+  Node5 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" token_vector" ,fontname="Helvetica"];
+  Node7 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" parenthesis_buffer" ,fontname="Helvetica"];
+  Node7 [label="BufferType",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structBufferType.html",tooltip=" "];
+  Node1 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" functions" ,fontname="Helvetica"];
+}

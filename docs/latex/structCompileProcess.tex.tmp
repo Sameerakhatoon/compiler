@@ -1,0 +1,40 @@
+\hypertarget{structCompileProcess}{}\doxysection{Compile\+Process Struct Reference}
+\label{structCompileProcess}\index{CompileProcess@{CompileProcess}}
+
+
+Collaboration diagram for Compile\+Process\+:
+% FIG 0
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structCompileProcess_1_1CompileProcessInputFile}{Compile\+Process\+Input\+File}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structCompileProcess_a47578e009f692f2e690b2462ab3391ac}\label{structCompileProcess_a47578e009f692f2e690b2462ab3391ac}} 
+int {\bfseries flags}
+\item 
+\mbox{\Hypertarget{structCompileProcess_ae0cc780f69a6e3a21c8b7e4a9cb0884a}\label{structCompileProcess_ae0cc780f69a6e3a21c8b7e4a9cb0884a}} 
+\mbox{\hyperlink{structPositionInFile}{Position\+In\+File}} {\bfseries position}
+\item 
+\mbox{\Hypertarget{structCompileProcess_a6cfe5861e9e705323f055452a2813191}\label{structCompileProcess_a6cfe5861e9e705323f055452a2813191}} 
+struct \mbox{\hyperlink{structCompileProcess_1_1CompileProcessInputFile}{Compile\+Process\+::\+Compile\+Process\+Input\+File}} {\bfseries input\+\_\+file}
+\item 
+\mbox{\Hypertarget{structCompileProcess_a5a3608414043b617d3a2400d0070275b}\label{structCompileProcess_a5a3608414043b617d3a2400d0070275b}} 
+\mbox{\hyperlink{structDynamicVector}{Dynamic\+Vector}} $\ast$ {\bfseries token\+\_\+vector}
+\item 
+\mbox{\Hypertarget{structCompileProcess_afd15950d22d579d0389b971cd503a959}\label{structCompileProcess_afd15950d22d579d0389b971cd503a959}} 
+\mbox{\hyperlink{structDynamicVector}{Dynamic\+Vector}} $\ast$ {\bfseries node\+\_\+vector}
+\item 
+\mbox{\Hypertarget{structCompileProcess_a160aad4b27306313d350670efa1519b5}\label{structCompileProcess_a160aad4b27306313d350670efa1519b5}} 
+\mbox{\hyperlink{structDynamicVector}{Dynamic\+Vector}} $\ast$ {\bfseries node\+\_\+tree\+\_\+vector}
+\item 
+\mbox{\Hypertarget{structCompileProcess_a8a9055c6e752c3469eadec6ee4918edb}\label{structCompileProcess_a8a9055c6e752c3469eadec6ee4918edb}} 
+FILE $\ast$ {\bfseries output\+\_\+file}
+\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+src/compiler.\+h\end{DoxyCompactItemize}

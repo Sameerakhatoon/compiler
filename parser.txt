@@ -1,0 +1,409 @@
+What is a parser?
+- A parser produces an abstract syntax tree composed of nodes
+- Parsers make nodes by reading token input provided from the Lexer
+
+- Are structured rules based on the token input
+- Can be easily iterated through
+- Can nest infinitely
+
+Int main()
+{
+int x = 50;
+}
+
+[FUNCTION_NODE main]
+|                 |
+[BODY_NODE Body]  [Vector Arguments]
+|
+[VARIABLE NODE X]
+|
+[NUMBER_NODE 50]
+
+Int main()
+{
+int x = 50;
+return 20;
+}
+
+[FUNCTION_NODE main]
+|                   |
+[BODY_NODE Body]    [Vector Arguments]
+|               |
+|                \
+|                 \
+|                  \
+[VARIABLE NODE X] [RETURN_STATEMENT_NODE]
+|                   |
+[NUMBER_NODE 50]  [NUMBER NODE 20]
+
+
+Why are parsers important?
+- Parsers provide structure for an input file
+- Nodes can branch off from eachother providing stability in logic
+- Makes it easier to validate the code
+- Makes it easier to compile the input file
+
+- A node is an entity that can be part of an abstract syntax tree
+- We use the term "abstract syntax tree" to describe nodes connected with eachother.
+
+Expressions
+
+50+20
+
+[EXPRESSION NODE +]
+|                  |
+[NUMBER NODE 50]  [NUMBER_NODE 20]
+
+50+20+30
+
+[EXPRESSION_NODE +]
+|                 |
+[NUMBER NODE 50]  [EXPRESSION NODE +]
+                        |           |
+                [NUMBER NODE 20]  [NUMBER_NODE 30]
+
+steps involved in implementing parser:
+- Node structure
+- expression node, precedence in expresssions
+- identifier Node
+- datatypes & keywords
+- scopes
+- symbol resolution
+- variables
+- array
+- structures, padding & allignment
+- function(datatype size & variable size), allignment & padding
+- scope offsets
+- function structures, parsing function, arguments, upward stacks,
+- parsing of identifiers
+- expression parenthesis
+- If, else, else if
+- return statement
+- loops(while, do while, for)
+- switch, continue, break, labels, goto, cases
+- tenaries
+- commas
+- array brackets
+- casts
+- fixup
+- forward decelaration
+- unions
+- reordering of nodes
+
+https://en.cppreference.com/w/c/language/operator_precedence
+
+What is a scope?
+- A single scope is a container that holds variables
+- Scopes can have parent scopes
+- When searching for a variable we check from the most recent scope upwards
+
+Scope example
+Int d;
+Int main(int z)
+{
+int a;
+int b;
+}
+Global Scope
+Variable D
+Function arguments scope
+Variable Z
+Function body scope
+Variable A
+Variable: R
+
+Scope rules:
+- No two variables can have the same name in the same scope
+- When opening brackets "{}" a new scope is created, its parent becomes the scope where the brackets were written.
+- Function arguments have there own scope
+- Global variables are in the global scope.
+- The global scope is the highest possible scope, it has no parent no scopes are above it.
+
+{ // Scope 2
+int x;
+{ // Scope 1
+int y = x;
+}
+}
+
+Structure scopes:
+- Structure bodies will have their own scopes that will have no parents.
+- The expression a.d.x = 50; will access the global scope to access variable "a" then the scope of "d"
+- The scope of "struct dog d" will have no parent and will hold variable "x"
+- Our resolver will deal with computing expressions to correct offsets. The resolver will be discussed in detail later in the course.
+
+struct abc
+{
+int x;
+A
+};
+struct dog
+{
+struct abc d;
+};
+struct dog a;
+
+- We will create essential systems involved in keeping track of scopes in our compiler
+- We will have what we call a "scope system" and a "resolver system"
+
+Understanding Symbol Resolution:-
+What are symbols?
+- Symbols are functions we have identified during the compile process
+- Symbols are structures we have identified during the compile process
+- Symbols are global variables
+
+Why do we need symbols?
+- If we create a structure variable we need to be able to fetch information about the structure being used
+- If we are calling a function we have to be able to fetch information about the function being called
+- Global variables have to be treated as symbols because other modules might access them
+
+Symbol Rules
+- Symbols should never share the same name
+
+Illustration
+struct abc
+{
+};
+int x;
+int y:
+struct dog
+{
+}
+struct abc d;
+
+SYMBOL TABLE
+DOG (STRUCTURE)
+ABC (STRUCTURE)
+
+Calculating Array Sizes
+- Int x[50]     (sizeof(int)) * 50 = 4*50
+- Int y [30] [20]       (sizeof(int)) * 30 * 20 = 4 * 30 * 20
+- char e [40] [10] [20]         (sizeof(char)) *40*10*20 = 1 * 40 * 10 * 20
+
+Rules for calculating array size:
+- We can only calculate array sizes at compile time for constant indexes that are constant or literal numbers. A
+
+Padding And Alignment:-
+CPU I/O Operations For 32 Bit Systems
+- PUSH, POP instructions use 4 bytes at a time
+- Memory access is preformed on boundaries of 4 bytes.
+
+0-3 bytes or word
+00 01 00 05
+4-8
+76 30 42 11
+9-12
+33 22 11 00
+13-17
+99 88 77 66
+18-21
+33 87 77 11
+
+say integer is stored in 2, 3, 4, 5 bytes, 2 read instructions, to access the integer, 
+
+How to solve the problem of loading two words?
+- Align our data so it fits into a 4 byte boundary
+- Pad NULL bytes at the end of an unaligned variable forcing it to be aligned.
+
+Unaligned structure example:
+
+struct dog
+{
+int x;
+char e;
+char d;
+int dd;
+}_attribute__((packed));
+
+Memory Address
+VARIABLE x: 0-3
+Variable e: 4
+Variable d: 5
+Variable dd: 6-9
+
+O Reading of "dd" requires two read operations
+struct dog
+{
+int x;
+char e;
+char d;
+int dd;
+}_attribute__((packed));
+
+0-3 (x)
+00 01 00 05
+4-5(e, d)
+76 30
+6-9(dd)
+33 22 11 00
+10-13
+99 88 77 66
+
+Aligned structure example
+struct dog
+{
+int x;
+char e;
+char d;
+int dd;
+};
+
+Memory Address
+VARIABLE x: 0-3
+Variable dd: 4-7
+Variable e: 8
+Variable d: 9
+
+Padding example
+
+Struct dog
+{
+char c;
+char b;
+int e;
+};
+Int main()
+{
+struct dog d;
+};
+
+Size of struct dog = 8 bytes
+
+Struct dog
+{
+char c;
+char b;
+char pad[2];
+int e;
+};
+Int main()
+{
+};
+struct dog d;
+
+
+Scope Offsets Explained:-
+
+What are scope offsets?
+- Scope offsets are an offset relative to the EBP(Base Pointer) or ESP(Stack pointer)
+- Scope offsets can offset upwards and downwards
+- Accessing local variables causes us to access an offset in the negative region. eg: ebp - 4, ebp - 8
+- Accessing function arguments causes us to access an offset in a positive region. eg: ebp + 4, ebp + 8
+
+Function argument scope access
+
+int test(int x, int y)
+{
+x = 50;
+y = 20;
+}
+
+test:
+push ebp
+mov ebp, esp
+mov DWORD PTR [ebp+8], 50
+mov DWORD PTR [ebp+12], 20
+nop
+pop ebp
+ret
+
+STACKFRAME
+0x1000-30 (4 bytes)
+0x0FFC – 50 (4 bytes)
+0x0FF8 – RETURN ADDRESS (4 bytes)
+0x0FF4 – OLD BASE POINTER (4 bytes)
+EBP = ESP(0x0FF4)
+
+Local variable scope access
+
+int test(int x, int y)
+{
+int d = 20;
+int e = 30;
+}
+
+test:
+push ebp 
+mov ebp, esp
+mov esp, 16 //why 16 if variable size sum = 4+4 = 8? cuz c prohramming lang standard, align stack to 16 bytes!
+mov DWORD PTR [ebp-4], 20
+mov DWORD PTR [ebp-8], 30
+nop
+leave
+ret
+
+STACK FRAME
+0x1000-Return address
+OXOFFC-OLD EBP
+EBP = ESP (OXOFFC)
+0x0FF8 - OXOFFB (d > ebp-4) (4 bytes)
+0x0FF4 - 0x0FF7 (e > ebp-8) (4 bytes)
+
+Structure global variable access
+
+struct dog
+{
+int a;
+char b;
+char c;
+};
+struct dog d;
+int main()
+{
+d.a = 50;
+d.b = 30;
+d.c = 60;
+}
+
+d: .zero 8
+main:
+push ebp
+mov ebp, esp
+mov DWORD PTR d, 50
+mov BYTE PTR d+4, 30
+mov BYTE PTR d+5, 60
+mov eax, 0
+pop ebp
+ret
+
+Structure Scope variable access
+
+struct dog
+{
+int a;
+char b;
+char c;
+};
+struct dog d;
+int main()
+{
+d.a = 50;
+d.b = 30;
+d.c = 60;
+}
+
+main:
+push ebp
+mov ebp, esp
+sub esp, 16
+mov DWORD PTR [ebp-8], 50
+mov BYTE PTR [ebp-4], 30
+mov BYTE PTR [ebp-3], 60
+mov eax, 0
+leave
+ret
+
+How do you calculate structure offset for local scope?
+
+struct dog
+{
+int a; // dog+0
+char b; // dog+4
+char c; // dog+5
+};
+
+Take size of dog structure
+sizeof(struct dog) = 8
+Variable "a" = 0-8 = EBP-8
+Variable "b" = 4-8 = EBP-4
+Variable "c" = 5-8 = EBP-3

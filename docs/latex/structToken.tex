@@ -1,0 +1,50 @@
+\hypertarget{structToken}{}\doxysection{Token Struct Reference}
+\label{structToken}\index{Token@{Token}}
+
+
+Collaboration diagram for Token\+:
+% FIG 0
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structToken_1_1TokenNumber}{Token\+Number}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structToken_aedd4f29067b4a3297f71b2a9eec8d085}\label{structToken_aedd4f29067b4a3297f71b2a9eec8d085}} 
+\begin{tabbing}
+xx\=xx\=xx\=xx\=xx\=xx\=xx\=xx\=xx\=\kill
+union \{\\
+\>char {\bfseries char\_val}\\
+\>const char $\ast$ {\bfseries string\_val}\\
+\>unsigned int {\bfseries int\_num}\\
+\>unsigned long {\bfseries long\_num}\\
+\>unsigned long long {\bfseries long\_long\_num}\\
+\>void $\ast$ {\bfseries any\_ptr}\\
+\} {\bfseries value}\\
+
+\end{tabbing}\item 
+\mbox{\Hypertarget{structToken_ae46b6b806df89709a13a14dc76c86623}\label{structToken_ae46b6b806df89709a13a14dc76c86623}} 
+int {\bfseries type}
+\item 
+\mbox{\Hypertarget{structToken_a92f422240aa8286329261b3d5eb167c8}\label{structToken_a92f422240aa8286329261b3d5eb167c8}} 
+int {\bfseries flags}
+\item 
+\mbox{\Hypertarget{structToken_a0ddfd7199c39a62820ef149eef94e6fc}\label{structToken_a0ddfd7199c39a62820ef149eef94e6fc}} 
+struct \mbox{\hyperlink{structPositionInFile}{Position\+In\+File}} {\bfseries position}
+\item 
+\mbox{\Hypertarget{structToken_adf74ae2f42da4986aa46f503be5fe54c}\label{structToken_adf74ae2f42da4986aa46f503be5fe54c}} 
+struct \mbox{\hyperlink{structToken_1_1TokenNumber}{Token\+::\+Token\+Number}} {\bfseries Number}
+\item 
+\mbox{\Hypertarget{structToken_a1e17979ffccc9d05213ba642bb8235c8}\label{structToken_a1e17979ffccc9d05213ba642bb8235c8}} 
+bool {\bfseries is\+\_\+whitespace}
+\item 
+\mbox{\Hypertarget{structToken_a655fdf2895569c01abeda574cd9d841b}\label{structToken_a655fdf2895569c01abeda574cd9d841b}} 
+const char $\ast$ {\bfseries whats\+\_\+between\+\_\+brackets}
+\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+src/compiler.\+h\end{DoxyCompactItemize}

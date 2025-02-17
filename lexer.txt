@@ -1,0 +1,58 @@
+- Lexical analysis is a process of turning strings into tokens
+- A token has a type and a value
+- The part of a software program that preforms lexical analysis is called a Lexer
+
+example:
+Int main()
+{
+int x = 50;
+}
+
+Tokens:
+<keyword, "int">
+<identifier, "main">
+<operator, "(">
+<symbol, ')'>
+<symbol, '{'>
+<keyword, "int">
+<identifier, "x">
+<operator, "=">
+<number, 50>
+<symbol, ';'>
+<symbol, '}'>
+
+Benefits Of Lexical Analysis
+- Easily identify source code keywords, symbols operators and more.
+- Less work for the parser
+- Token information is in the right format (i.e numbers are actually integers not text once processed by the Lexer). Eg: in src file, number say 50 in above prog is a string, ascii, but converting into integer while lexical analysis
+- Unnecessary information such as spaces can be discarded.
+
+Token Types In Our Compiler
+- TOKEN_TYPE_IDENTIFIER - Used for all words with letters under scrolls and numbers that are not keywords.
+- TOKEN_TYPE_KEYWORD - Keywords represent datatypes, and control procedure commands such as "break", "continue"
+- TOKEN_TYPE_OPERATOR - Operators are used in expressions such as 5+10 "+" would be the operator
+- TOKEN_TYPE_SYMBOL - Quotes, semicolons, colons are more
+- TOKEN_TYPE_NUMBER - A numerical number
+- TOKEN_TYPE_STRING - A string with data between double quots i.e "hello world"
+- TOKEN_TYPE_COMMENT - A C comment in our program
+- TOKEN_TYPE_NEWLINE - A new line in our program
+
+Token Types In Our Compiler
+- Keyword: unsigned, signed, char, short, int, float, double, long, void, struct, union, static, _ignore_typecheck, return, include, sizeof, if, else, while, for, do, break, continue, switch, case, default, goto, typedef, const, extern, restrict
+- Operator: +, -, *, >, <, ^, %, !, =, ~, |, &, (, [,',',.,? (We also allow some to join i.e >>, <<, ***)
+- Number: if (c >= '0' && c < ='9')
+- Symbol: {, },:,;, #, \,),]
+- Identifier: A-z, a-z, followed by 0-9 and "_" underscrolls (Think of variable names, function names, structure names)
+
+left bracket is in operator, but right is in symbol? cuz brackets are operators technically! so when it finds right bracket symbol, it's done w/ the operator!
+keyword takes priority, anything which isn't keyword is an identifier!
+
+steps involved in building lexical analyser
+- creating token structures
+- preparing Lexer
+- creating number, string, operator, symbol, identifier, new line, comment, tokens
+- handling Quotes
+- implementing hexadecimal, binary
+- dealing w/ parenthesis buffer
+- creating tokens outside of input file
+- creating number Types
