@@ -25,7 +25,7 @@ void symbol_resolver_for_struct_node(CompileProcess* process, Node* node);
 
 void symbol_resolver_for_union_node(CompileProcess* process, Node* node);
 
-void void_symbol_resolver_build_for_node(CompileProcess* process, Node* node);
+void symbol_resolver_build_for_node(CompileProcess* process, Node* node);
 
 
 
@@ -103,14 +103,17 @@ void symbol_resolver_for_function_node(CompileProcess* process, Node* node){
 }
 
 void symbol_resolver_for_struct_node(CompileProcess* process, Node* node){
-    compiler_error(process, "Struct nodes are not supported yet");
+    if(node->flags & NODE_FLAG_IS_FORWARD_DECLARATION){
+        return;
+    }
+    symbol_resolver_register_symbol(process, node->data.structure.name, SYMBOL_TYPE_NODE, node);
 }
 
 void symbol_resolver_for_union_node(CompileProcess* process, Node* node){
     compiler_error(process, "Union nodes are not supported yet");
 }
 
-void void_symbol_resolver_build_for_node(CompileProcess* process, Node* node){
+void symbol_resolver_build_for_node(CompileProcess* process, Node* node){
     switch(node->type){
         case NODE_TYPE_VARIABLE:
             symbol_resolver_for_variable_node(process, node);

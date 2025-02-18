@@ -650,6 +650,8 @@ void print_node_vector(DynamicVector* node_vector);
 
 enum{
     NODE_FLAG_INSIDE_EXPRESSION = 0b00000001,
+    NODE_FLAG_IS_FORWARD_DECLARATION = 0b00000010,
+    NODE_FLAG_HAS_VARIABLE_COMBINED = 0b00000100,
 };
 
 Node* peek_node_expressionable_or_null();
@@ -795,5 +797,27 @@ bool is_variable_node_primitive(Node* node);
 bool is_datatype_primitive(DataType* datatype);
 
 Node* get_variable_node_or_list(Node* node);
+
+void make_struct_node(const char* name, Node* body_node);
+
+void symbol_resolver_build_for_node(CompileProcess* process, Node* node);
+
+Symbol* symbol_resolver_get_symbol(CompileProcess* process, const char* name);
+
+void make_struct_node(const char* name, Node* body_node);
+
+Node* get_struct_node_for_name(CompileProcess* process, const char* name);
+
+Node* get_node_from_symbol(CompileProcess* process,const char* name);
+
+Node* get_node_form_a_symbol(Symbol* symbol);
+
+
+
+void initialize_symbol_resolver(CompileProcess* process);
+
+static void symbol_resolver_push_symbol(CompileProcess* process, Symbol* symbol);
+
+void symbol_resolver_new_table(CompileProcess* process);
 
 #endif

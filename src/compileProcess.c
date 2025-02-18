@@ -45,6 +45,9 @@ CompileProcess* create_compile_process(const char* in_file_name, const char* out
     ptr_to_process->output_file = out_file;
     ptr_to_process->node_vector = create_vector(sizeof(Node* ));
     ptr_to_process->node_tree_vector = create_vector(sizeof(Node* ));
+    initialize_symbol_resolver(ptr_to_process);
+    symbol_resolver_new_table(ptr_to_process);
+
     return ptr_to_process;
 }
 

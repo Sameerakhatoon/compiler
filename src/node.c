@@ -159,3 +159,37 @@ Node* get_variable_node_or_list(Node* node){
     }
     return get_variable_node(node);
 }
+
+void make_struct_node(const char* name, Node* body_node){
+    int flags = 0;
+    if(!body_node){
+        flags |= NODE_FLAG_IS_FORWARD_DECLARATION;
+    }
+    create_node(&((Node){.type = NODE_TYPE_STRUCT, .data.structure.name = name, .data.structure.body_node = body_node, .flags = flags}));
+}
+
+Node* get_struct_node_for_name(CompileProcess* process, const char* name){
+    Node* node = get_node_from_symbol(process, name);
+    if(!node){
+        return NULL;
+    }
+    if(node->type != NODE_TYPE_STRUCT){
+        return NULL;
+    }
+    return node;
+}
+
+Node* get_node_from_symbol(CompileProcess* process,const char* name){
+    Symbol* symbol = symbol_resolver_get_symbol(process, name);
+    if(!symbol){
+        return NULL;
+    }
+    return get_node_form_a_symbol(symbol);
+}
+
+Node* get_node_form_a_symbol(Symbol* symbol){
+    if(symbol->type != SYMBOL_TYPE_NODE){
+        return NULL;
+    }
+    return symbol->data;
+}
