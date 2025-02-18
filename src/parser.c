@@ -973,7 +973,7 @@ ParserScopeEntity* create_new_parser_scope_entity(Node* variable_node, int stack
 }
 
 ParserScopeEntity* get_parser_scope_last_entity_stop_global_scope(){
-    return scope_last_entity_stop_at(current_process, current_process->scope.root);
+    return get_scope_last_entity_stop_at(current_process, current_process->scope.root);
 }
 
 void push_parser_scope(ParserScopeEntity* entity, size_t size){
@@ -1024,7 +1024,7 @@ void parser_scope_offset_calculate_for_struct(History* history, Node* node){
 }
 
 ParserScopeEntity* get_parser_scope_last_entity(){
-    return scope_last_entity(current_process);
+    return get_scope_last_entity(current_process);
 }
 
 void parse_body_multiple_statements(size_t* sum_of_var_size, DynamicVector* body_vector, History* history){

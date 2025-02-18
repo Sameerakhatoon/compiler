@@ -19,13 +19,13 @@ void scope_iteration_end(Scope* scope);
 
 void* scope_iterate_back(Scope* scope);
 
-void* last_entity_of_scope(Scope* scope);
+void* get_last_entity_of_scope(Scope* scope);
 
-void* last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope);
+void* get_last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope);
 
-void* scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope);
+void* get_scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope);
 
-void* scope_last_entity(CompileProcess* process);
+void* get_scope_last_entity(CompileProcess* process);
 
 void push_scope(CompileProcess* process, void* pointer, size_t element_size);
 
@@ -49,10 +49,10 @@ Scope* allocate_scope(){
 Scope* create_root_scope(CompileProcess* process){ //the global scope
     assert(!process->scope.root);
     assert(!process->scope.current);
-    Scope* root = allocate_scope();
-    process->scope.root = root;
-    process->scope.current = root;
-    return root;
+    Scope* root_scope = allocate_scope();
+    process->scope.root = root_scope;
+    process->scope.current = root_scope;
+    return root_scope;
 }
 
 Scope* deallocate_scope(Scope* scope){
@@ -92,34 +92,34 @@ void* scope_iterate_back(Scope* scope){
     return peek_pointer(scope->entities);
 }
 
-void* last_entity_of_scope(Scope* scope){
+void* get_last_entity_of_scope(Scope* scope){
     if(get_element_count(scope->entities) == 0){
         return NULL;
     }
     return get_last_element_pointer(scope->entities);
 }
 
-void* last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope){
+void* get_last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope){
     if(scope == stop_scope){
         return NULL;
     }
-    void* entity = last_entity_of_scope(scope);
-    if(entity){
-        return entity;
+    void* last_entity = get_last_entity_of_scope(scope);
+    if(last_entity){
+        return last_entity;
     }
-    Scope* parent = scope->parent;
-    if(parent){
-        return last_entity_from_scope_stop_at(parent, stop_scope);
+    Scope* parent_scope = scope->parent;
+    if(parent_scope){
+        return get_last_entity_from_scope_stop_at(parent_scope, stop_scope);
     }
     return NULL;
 }
 
-void* scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope){
-    return last_entity_from_scope_stop_at(process->scope.current, stop_scope);
+void* get_scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope){
+    return get_last_entity_from_scope_stop_at(process->scope.current, stop_scope);
 }
 
-void* scope_last_entity(CompileProcess* process){
-    return last_entity_from_scope_stop_at(process->scope.current, NULL);
+void* get_scope_last_entity(CompileProcess* process){
+    return get_last_entity_from_scope_stop_at(process->scope.current, NULL);
 }
 
 void push_scope(CompileProcess* process, void* pointer, size_t element_size){

@@ -752,13 +752,13 @@ void scope_iteration_end(Scope* scope);
 
 void* scope_iterate_back(Scope* scope);
 
-void* last_entity_of_scope(Scope* scope);
+void* get_last_entity_of_scope(Scope* scope);
 
-void* last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope);
+void* get_last_entity_from_scope_stop_at(Scope* scope, Scope* stop_scope);
 
-void* scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope);
+void* get_scope_last_entity_stop_at(CompileProcess *process, Scope* stop_scope);
 
-void* scope_last_entity(CompileProcess* process);
+void* get_scope_last_entity(CompileProcess* process);
 
 void push_scope(CompileProcess* process, void* pointer, size_t element_size);
 

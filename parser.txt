@@ -147,7 +147,7 @@ struct dog a;
 - We will have what we call a "scope system" and a "resolver system"
 
 Understanding Symbol Resolution:-
-What are symbols?
+What are symbols? in our compiler, not the final object file!
 - Symbols are functions we have identified during the compile process
 - Symbols are structures we have identified during the compile process
 - Symbols are global variables

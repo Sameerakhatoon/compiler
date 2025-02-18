@@ -26,7 +26,7 @@ int get_padding(int value, int to){
     if(value%to==0){
         return 0;
     }
-    return to - ((value%to)%to);
+    return to - (value%to) % to;
 }
 
 int get_align_value(int val, int to){
@@ -37,7 +37,7 @@ int get_align_value(int val, int to){
 }
 
 int get_align_value_treat_positive(int val, int to){
-    assert(val>=0);
+    assert(to>=0);
     if(val<0){
         to = -to;
     }
