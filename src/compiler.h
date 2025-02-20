@@ -521,6 +521,12 @@ int yyleng();
 
 typedef struct Node Node;
 enum{
+
+
+
+
+
+
     NODE_TYPE_EXPRESSION,
     NODE_TYPE_EXPRESSION_PARENTHESES,
     NODE_TYPE_NUMBER,
@@ -543,7 +549,6 @@ enum{
     NODE_TYPE_STATEMENT_CASE,
     NODE_TYPE_STATEMENT_DEFAULT,
     NODE_TYPE_STATEMENT_GOTO,
-
     NODE_TYPE_UNARY,
     NODE_TYPE_TERNARY,
     NODE_TYPE_LABEL,
@@ -572,7 +577,9 @@ typedef struct DataType{
         size_t size; //size of complete array, datatype_size*number_of_elements_in_array = datatype_size*array_index*array_index
     } array;
 }DataType;
-
+enum{
+    FUNCTION_NODE_FLAG_IS_NATIVE = 0b00000001,
+};
 struct Node{
     union{
         char char_val;
@@ -587,6 +594,9 @@ struct Node{
             Node* right;
             const char* operator;
         } expression;
+        struct parentheses{
+            Node* expression;
+        } parentheses;
         struct var{
             struct DataType data_type;
             const char* name;
@@ -611,6 +621,17 @@ struct Node{
             bool padded;
             Node* largest_var_node;
         }body;
+        struct function{
+            int flags;
+            DataType* return_type;
+            const char* name;
+            struct function_args{
+                DynamicVector* args;
+                size_t stack_addition; //how much to add to ebp to get to the first argument
+            }function_args;
+            Node* body_node;
+            size_t stack_size; //size of stack frame, sum of size of all variables inside this function.
+        } function;
     } data;
     int type;
     int flags;
@@ -819,5 +840,19 @@ void initialize_symbol_resolver(CompileProcess* process);
 static void symbol_resolver_push_symbol(CompileProcess* process, Symbol* symbol);
 
 void symbol_resolver_new_table(CompileProcess* process);
+
+bool is_token_identifier(Token* token);
+
+Node* make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node);
+
+Symbol* symbol_resolver_get_symbol_for_native_function(CompileProcess* process, const char* name);
+
+size_t get_function_node_argument_stack_addition(Node* function_node);
+
+bool is_node_of_value_type(Node* node);
+
+bool is_node_expression_or_parenthesis(Node* node);
+
+void make_expression_parenthesis_node(Node* expression_node);
 
 #endif

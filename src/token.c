@@ -44,3 +44,7 @@ bool is_token_symbol(Token* token, char symbol){
 bool is_token_primitive_keyword(Token* token){
     return token && token->type == TOKEN_TYPE_KEYWORD && (ARE_STRINGS_EQUAL(token->value.string_val, "int") || ARE_STRINGS_EQUAL(token->value.string_val, "char") || ARE_STRINGS_EQUAL(token->value.string_val, "float") || ARE_STRINGS_EQUAL(token->value.string_val, "double") || ARE_STRINGS_EQUAL(token->value.string_val, "void") || ARE_STRINGS_EQUAL(token->value.string_val, "long") || ARE_STRINGS_EQUAL(token->value.string_val, "short"));
 }
+
+bool is_token_identifier(Token* token){
+    return token && token->type == TOKEN_TYPE_IDENTIFIER;
+}

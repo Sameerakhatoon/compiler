@@ -175,18 +175,35 @@ void parse_body_multiple_statements(size_t* sum_of_var_size, DynamicVector* body
 size_t get_size_of_struct(const char* name);
 
 
+extern Node* parser_current_function_node;
+
+void parse_function(DataType* return_type, Token* name_token, History* history);
+
+void parse_function_body(History* history);
+
+
+DynamicVector* parse_function_arguments(History* history);
+
+void read_token_dots(size_t size);
+
+void parse_full_variable(History* history);
+
+
+void parse_for_parenthesis(History* history);
+
+void parser_deal_with_additional_parentheses();
 
 
 
 
 
-
-
+Node* parser_blank_node;
 
 int parse(CompileProcess* compiler){
     create_root_scope(compiler);
     current_process = compiler;
     set_node_vectors(current_process->node_vector, current_process->node_tree_vector);
+    parser_blank_node = create_node(&((Node){.type = NODE_TYPE_BLANK}));
     parser_last_token = NULL;
     Node* node = NULL;
     set_peek_index(current_process->token_vector, 0);
@@ -267,6 +284,8 @@ Node* create_node(Node* node){
     Node* node_created = malloc(sizeof(Node));
     memcpy(node_created, node, sizeof(Node));
     #warning "set the binded to"
+    node->BindedTo.body = parser_current_body_node;
+    node->BindedTo.function = parser_current_function_node;
     push_node(node_created);
     return node_created;
 }
@@ -316,6 +335,7 @@ int parse_expressionable_single(History* history){
             break;
         case TOKEN_TYPE_IDENTIFIER:
             parse_identifier(history);
+            result = 0;
             break;
         case TOKEN_TYPE_OPERATOR:
             parse_expression(history);
@@ -330,7 +350,12 @@ int parse_expressionable_single(History* history){
 }
 
 int parse_expression(History* history){ //parsing operator & merging w/ correct operands
-    parse_normal_expression(history);
+    if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "(")){
+        parse_for_parenthesis(history);
+    }
+    else{
+        parse_normal_expression(history);
+    }
     return 0;
 }
 
@@ -469,6 +494,10 @@ void parse_variable_or_function_or_struct_or_union(History* history){
     }
     if(name_token->type != TOKEN_TYPE_IDENTIFIER){
         compiler_error(current_process, "expecting a valid name for variable or function\n");
+    }
+    if(is_next_token_operator("(")){
+        parse_function(&datatype, name_token, history);
+        return;
     }
     parse_variable(&datatype, name_token, history);
     if(is_next_token_operator(",")){
@@ -732,7 +761,6 @@ void parse_expressionable_root(History* history){
 void make_variable_node_and_register(History* history, DataType* datatype, Token* name_token, Node* value_node){
     make_variable_node(datatype, name_token, value_node);
     Node* variable_node = pop_node();
-    #warning "register the variable, i.e., calculate scope offset and push the variable node to scope"
     //calculate scope offset
     parser_scope_offset_calculate(history, variable_node);
     //push variable node to scope
@@ -826,6 +854,7 @@ enum{
     HISTORY_FLAG_IS_UPWARD_STACK = 0b00000010,
     HISTORY_FLAG_IS_GLOBAL_SCOPE = 0b00000100,
     HISTORY_FLAG_INSIDE_STRUCTURE = 0b00001000,
+    HISTORY_FLAG_INSIDE_FUNCTION_BODY = 0b00010000,
 };
 
 
@@ -842,7 +871,7 @@ void parse_struct_no_new_scope(DataType* datatype, bool is_foward_declaration){
         datatype->size = body_node->data.body.size;
     }
     datatype->data.struct_node = struct_node;
-    if(peek_next_token()->type == TOKEN_TYPE_IDENTIFIER){
+    if(is_token_identifier(peek_next_token())){
         Token* variable_name = get_next_token();
         struct_node->flags |= NODE_FLAG_HAS_VARIABLE_COMBINED;
         if(datatype->flags & DATATYPE_FLAG_STRUCT_OR_UNION_NO_NAME){
@@ -1031,8 +1060,11 @@ void parser_scope_offset_calculate_for_stack(History* history, Node* variable_no
     bool upward_stack = history->flags & HISTORY_FLAG_IS_UPWARD_STACK;
     int offset = -get_variable_size(variable_node);
     if(upward_stack){
-        #warning "implement upward stack"
-        compiler_error(current_process, "upward stack not implemented");
+        size_t stack_addition = get_function_node_argument_stack_addition(parser_current_function_node);
+        offset = stack_addition;
+        if(last_entity){
+            offset = get_datatype_size(&get_variable_node(last_entity->variable_node)->data.var.data_type);
+        }
     }
     if(last_entity){
         offset+= get_variable_node(last_entity->variable_node)->data.var.aligned_offset;
@@ -1102,3 +1134,103 @@ size_t get_size_of_struct(const char* name){
     assert(node->type == NODE_TYPE_STRUCT);
     return node->data.body.size;
 }
+
+// extern Node* parser_current_function_node;
+
+void parse_function(DataType* return_type, Token* name_token, History* history){
+    DynamicVector* arguments_vector = NULL;
+    parser_new_scope();
+    make_function_node(return_type, name_token->value.string_val, NULL, NULL);
+    Node* function_node = peek_node();
+    parser_current_function_node = function_node;
+    if(is_datatype_struct_or_union(return_type)){
+        function_node->data.function.function_args.stack_addition += DATA_SIZE_DWORD;
+    }
+    expect_operator("(");
+    arguments_vector = parse_function_arguments(clone_history(history, 0));
+    expect_symbol(')');
+    function_node->data.function.function_args.args = arguments_vector;
+    if(symbol_resolver_get_symbol_for_native_function(current_process, name_token->value.string_val)){
+        function_node->flags |= FUNCTION_NODE_FLAG_IS_NATIVE;
+    }
+    if(is_next_token_symbol('{')){
+        parse_function_body(begin_history(0));
+        Node* body_node = pop_node();
+        function_node->data.function.body_node = body_node;
+    }
+    else{
+        expect_symbol(';');
+    }
+    parser_current_function_node = NULL;
+    parser_finish_scope();
+}
+
+void parse_function_body(History* history){
+    parse_body(NULL, clone_history(history, history->flags | HISTORY_FLAG_INSIDE_FUNCTION_BODY));
+}
+
+DynamicVector* parse_function_arguments(History* history){
+    parser_new_scope();
+    DynamicVector* arguments_vector = create_vector(sizeof(Node*));
+    while(!is_next_token_symbol(')')){
+        if(is_next_token_operator(".")){
+            read_token_dots(3);
+            parser_finish_scope();
+        }
+        parse_full_variable(clone_history(history, history->flags | HISTORY_FLAG_IS_UPWARD_STACK));
+        Node* argument_node = pop_node();
+        push_element(arguments_vector, &argument_node);
+        if(!is_next_token_operator(",")){
+            break;
+        }
+        get_next_token();
+    }
+    parser_finish_scope();
+    return arguments_vector;
+}
+
+void read_token_dots(size_t size){
+    for(int i = 0; i < size; i++){
+        expect_operator(".");
+    }
+}
+
+void parse_full_variable(History* history){
+    DataType datatype;
+    parse_datatype(&datatype);
+    Token* name_token = NULL;
+    if(peek_next_token()->type == TOKEN_TYPE_IDENTIFIER){
+        name_token = get_next_token();
+    }
+    parse_variable(&datatype, name_token, history);
+}
+
+
+void parse_for_parenthesis(History* history){
+    expect_operator("(");
+    Node* left_node = NULL;
+    Node* temp_node = peek_node_or_null();
+    if(temp_node && is_node_of_value_type(temp_node)){
+        left_node = temp_node;
+        pop_node();
+    }
+    Node* expression_node = parser_blank_node;
+    if(!is_next_token_symbol(')')){
+        parse_expressionable(history);
+        expression_node = pop_node();
+    }
+    expect_symbol(')');
+    make_expression_parenthesis_node(expression_node);
+    if(left_node){
+        Node* parentheses_node = pop_node();
+        make_expression_node(left_node, parentheses_node, "()");
+    }
+    parser_deal_with_additional_parentheses();
+}
+
+void parser_deal_with_additional_parentheses(){
+    if(peek_next_token()->type == TOKEN_TYPE_OPERATOR){
+        parse_for_parenthesis(begin_history(0));
+    }
+}
+

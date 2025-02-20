@@ -407,3 +407,40 @@ sizeof(struct dog) = 8
 Variable "a" = 0-8 = EBP-8
 Variable "b" = 4-8 = EBP-4
 Variable "c" = 5-8 = EBP-3
+
+What do functions have?
+- Functions have arguments
+- Functions have scopes
+- Functions have names that are unique
+- Functions can return data
+
+Function memory structure:
+
+struct function in node, union - data
+
+struct function{
+        // Special flags for this function
+        int flags;
+        struct datatype return_type;
+        const char *name;
+        struct function_arguments{
+                // a vector of "variable" nodes that represents the function arguments.
+                // I.e int abc(int a, int b) here we have two arguments in the vector a and b.
+                struct vector vector;
+                // How much we should add to the stack when accessing function arguments
+                // When we push special elements to the stack this will need to be adjusted
+                // In most circumstances this will equal to 8 to account for the base pointer and the return address..
+                size_t stack_addition;
+        } args;
+        // The body of this function, everything between the brackets.
+        // This is NULL if this function is just a definition and its a pointer
+        // to the body node if this function is declared. and has a full body
+        struct node *body_n;
+        // The size of the function stack size (unaligned)
+        // Essentally this is the sum of the size of all variables inside the body of the given function
+        // regardless if the variables are deep in a scope they are included.
+        size_t stack_size;
+} func;
+
+Function special flags
+- FUNCTION_NODE_FLAG_IS_NATIVE - (Means that the given function exists only in the compiler, if you were to call it, it'll generate inline assembly, its like a macro function) Think of va_copy, va_start

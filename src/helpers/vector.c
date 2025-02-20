@@ -229,7 +229,10 @@ static void* get_vector_data_end_pointer(DynamicVector* vector){
 
 void* get_last_element(DynamicVector* vector)
 {
-    assert_bounds_for_pop(vector, vector->element_count-1);
+    // assert_bounds_for_pop(vector, vector->element_count-1);
+    if(vector->element_count == 0){
+        return NULL;
+    }
     return get_element_at(vector, vector->element_count-1);
 }
 

@@ -94,9 +94,17 @@ void print_node(Node* node, int depth) {
             break;
         case NODE_TYPE_BODY:
             printf("Node body\n");
-            for (int i = 0; i < node->data.body.statements->element_count; i++) {
+            for(int i = 0; i < node->data.body.statements->element_count; i++) {
                 print_node(*(Node**)get_element_at(node->data.body.statements, i), depth + 1);
             }
+            break;
+        case NODE_TYPE_FUNCTION:
+            printf("Node function: %s\n", node->data.function.name);
+            print_node(node->data.function.body_node, depth + 1);
+            break;
+        case NODE_TYPE_EXPRESSION_PARENTHESES:
+            printf("Node parentheses\n");
+            print_node(node->data.parentheses.expression, depth + 1);
             break;
         default:
             printf("Unknown node type\n");
@@ -192,4 +200,29 @@ Node* get_node_form_a_symbol(Symbol* symbol){
         return NULL;
     }
     return symbol->data;
+}
+
+Node* make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node){
+    Node* function_node = create_node(&((Node){.type = NODE_TYPE_FUNCTION, .data.function.return_type = return_type, .data.function.name = name, .data.function.function_args = parameters, .data.function.body_node = body_node, .data.function.function_args.stack_addition = DATA_SIZE_DDWORD}));
+    return function_node;
+    #warning "don't forget to build frame elements"
+}
+
+Node* parser_current_function_node = NULL;
+
+size_t get_function_node_argument_stack_addition(Node* function_node){
+    assert(function_node->type == NODE_TYPE_FUNCTION);
+    return function_node->data.function.function_args.stack_addition;
+}
+
+bool is_node_of_value_type(Node* node){
+    return is_node_expression_or_parenthesis(node) || node->type == NODE_TYPE_NUMBER || node->type == NODE_TYPE_UNARY || node->type == NODE_TYPE_IDENTIFIER || node->type == NODE_TYPE_TERNARY || node->type == NODE_TYPE_STRING;
+}
+
+bool is_node_expression_or_parenthesis(Node* node){
+    return node->type == NODE_TYPE_EXPRESSION || node->type == NODE_TYPE_EXPRESSION_PARENTHESES;
+}
+
+void make_expression_parenthesis_node(Node* expression_node){
+    create_node(&((Node){.type = NODE_TYPE_EXPRESSION_PARENTHESES, .data.parentheses.expression = expression_node}));
 }
