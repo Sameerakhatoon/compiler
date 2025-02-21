@@ -1,7 +1,8 @@
 int main(int x){
-    switch(1) {
-        case 1:
-            x = 1? 1 : 2;
+    switch (1){
+        case 2:
+            x = 3;
             break;
     }
+    return 0;
 }

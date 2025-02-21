@@ -686,6 +686,10 @@ struct Node{
             Node* true_expression;
             Node* false_expression;
         } tenary;
+        struct cast{
+            DataType data_type;
+            Node* operand_node;
+        } cast;
     } data;
     int type;
     int flags;
@@ -935,5 +939,7 @@ void make_goto_node(Node* label_name_node);
 void make_switch_case_node(Node* expression_node);
 
 void make_tenary_node(Node* true_expression, Node* false_expression);
+
+void make_cast_node(DataType* data_type, Node* operand_node);
 
 #endif

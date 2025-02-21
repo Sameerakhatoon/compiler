@@ -444,3 +444,16 @@ struct function{
 
 Function special flags
 - FUNCTION_NODE_FLAG_IS_NATIVE - (Means that the given function exists only in the compiler, if you were to call it, it'll generate inline assembly, its like a macro function) Think of va_copy, va_start
+
+FIXUPS: reminder to compiler to come back later & resolve it
+
+Structure rules
+1. Structures can be defined anywhere in a source file
+2. Structures can be forward declared so they can be accessible in source code above where they were declared as a pointer.
+
+Problems
+1. How do we know a structure being referenced actually exists if we haven't parsed it yet?
+2. How do we ensure that structures declared below code can still be accessed if they are declared as a pointer.
+
+Solution: Fixups
+1. When we encounter a structure variable declaration where the structure does not exist yet we register a fixup which will be processed when we finish parsing.

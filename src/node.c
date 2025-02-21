@@ -168,6 +168,11 @@ void print_node(Node* node, int depth) {
             print_node(node->data.tenary.true_expression, depth + 1);
             print_node(node->data.tenary.false_expression, depth + 1);
             break;
+        case NODE_TYPE_CAST:
+            printf("Node cast\n");
+            printf("Data type: %s\n", node->data.cast.data_type.name);
+            print_node(node->data.cast.operand_node, depth + 1);
+            break;
         default:
             printf("Unknown node type\n");
             printf("Node type: %i\n", node->type);
@@ -338,4 +343,8 @@ void make_switch_case_node(Node* expression_node){
 
 void make_tenary_node(Node* true_expression, Node* false_expression){
     create_node(&((Node){.type = NODE_TYPE_TERNARY, .data.tenary.true_expression = true_expression, .data.tenary.false_expression = false_expression}));
+}
+
+void make_cast_node(DataType* data_type, Node* operand_node){
+    create_node(&((Node){.type = NODE_TYPE_CAST, .data.cast.data_type = data_type, .data.cast.operand_node = operand_node}));
 }

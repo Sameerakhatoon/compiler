@@ -250,6 +250,11 @@ void parse_switch_case(History* history);
 
 void parse_for_tenary(History* history);
 
+void parse_for_comma(History* history);
+
+void parse_for_array(History* history);
+
+void parse_for_cast();
 
 Node* parser_blank_node;
 
@@ -409,6 +414,12 @@ int parse_expression(History* history){ //parsing operator & merging w/ correct 
     }
     else if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "?")){
         parse_for_tenary(history);
+    }
+    else if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "?")){
+        parse_for_comma(history);
+    }
+    else if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "[")){
+        parse_for_array(history);
     }
     else{
         parse_normal_expression(history);
@@ -1318,6 +1329,10 @@ void parse_full_variable(History* history){
 
 void parse_for_parenthesis(History* history){
     expect_operator("(");
+    if(peek_next_token()->type == TOKEN_TYPE_KEYWORD){
+        parse_for_cast(history);
+        return;
+    }
     Node* left_node = NULL;
     Node* temp_node = peek_node_or_null();
     if(temp_node && is_node_of_value_type(temp_node)){
@@ -1497,7 +1512,7 @@ void parser_end_switch_statement(struct parser_history_switch* switch_history){
 void parser_register_case(History* history, Node* case_node){
     assert(history->flags & HISTORY_FLAG_INSIDE_SWITCH);
     ParsedSwitchCase parsed_case;
-    #warning "to implement, must be set to case index"
+    parsed_case.index = case_node->data.statement.statement_switch_case.expression_node->literal_value.long_long_num;
     parsed_case.index = 0;
     push_element(history->parser_history_switch.cases_data.cases, &parsed_case);
 }
@@ -1555,4 +1570,37 @@ void parse_for_tenary(History* history){
     make_tenary_node(true_node, false_node);
     Node* tenary_node = pop_node();
     make_expression_node(condition_node, tenary_node, "?");
+}
+
+void parse_for_comma(History* history){
+    get_next_token();
+    Node* left_node = pop_node();
+    parse_expressionable_root(history);
+    Node* right_node = pop_node();
+    make_expression_node(left_node, right_node, ",");
+}
+
+void parse_for_array(History* history){
+    Node* left_node = peek_node_or_null();
+    if(left_node && left_node->type == NODE_TYPE_VARIABLE){
+        left_node = pop_node();
+    }
+    expect_operator("[");
+    parse_expressionable_root(history);
+    expect_symbol(']');
+    Node* expression_node = pop_node();
+    make_bracket_node(expression_node);
+    if(left_node){
+        Node* bracket_node = pop_node();
+        make_expression_node(left_node, bracket_node, "[]");
+    }
+}
+
+void parse_for_cast(){
+    DataType data_type = {};
+    parse_datatype(&data_type);
+    expect_symbol(')');
+    parse_expressionable_root(begin_history(0));
+    Node* operand_node = pop_node();
+    make_cast_node(&data_type, operand_node);
 }
