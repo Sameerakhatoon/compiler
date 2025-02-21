@@ -1,8 +1,7 @@
 int main(int x){
     switch(1) {
-        goto abc;
-        break;
+        case 1:
+            x = 1? 1 : 2;
+            break;
     }
-    abc:
-        x = 1;
 }

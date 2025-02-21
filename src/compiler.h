@@ -227,6 +227,14 @@ struct Token{
 * @var TOKEN_TYPE_NUMBER
 * Member 'TOKEN_TYPE_NUMBER' represents a number
 */
+
+
+
+
+
+
+
+
 enum{
     
     TOKEN_TYPE_IDENTIFIER,
@@ -527,10 +535,6 @@ typedef struct Node Node;
 enum{
 
 
-
-
-
-
     NODE_TYPE_EXPRESSION,
     NODE_TYPE_EXPRESSION_PARENTHESES,
     NODE_TYPE_NUMBER,
@@ -668,6 +672,9 @@ struct Node{
                 DynamicVector* cases;
                 bool has_default_case;
             } statement_switch;
+            struct statement_switch_case{
+                Node* expression_node;
+            }statement_switch_case;
             struct statement_goto{
                 Node* label_node;
             } statement_goto;
@@ -675,6 +682,10 @@ struct Node{
         struct label{
             Node* name_node;
         } label;
+        struct tenary{
+            Node* true_expression;
+            Node* false_expression;
+        } tenary;
     } data;
     int type;
     int flags;
@@ -920,5 +931,9 @@ void make_break_node();
 void make_label_node(Node* label_name_node);
 
 void make_goto_node(Node* label_name_node);
+
+void make_switch_case_node(Node* expression_node);
+
+void make_tenary_node(Node* true_expression, Node* false_expression);
 
 #endif

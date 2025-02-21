@@ -159,6 +159,15 @@ void print_node(Node* node, int depth) {
             printf("Node goto\n");
             print_node(node->data.statement.statement_goto.label_node, depth + 1);
             break;
+        case NODE_TYPE_STATEMENT_CASE:
+            printf("Node case\n");
+            print_node(node->data.statement.statement_switch_case.expression_node, depth + 1);
+            break;
+        case NODE_TYPE_TERNARY:
+            printf("Node ternary\n");
+            print_node(node->data.tenary.true_expression, depth + 1);
+            print_node(node->data.tenary.false_expression, depth + 1);
+            break;
         default:
             printf("Unknown node type\n");
             printf("Node type: %i\n", node->type);
@@ -321,4 +330,12 @@ void make_label_node(Node* label_name_node){
 
 void make_goto_node(Node* label_name_node){
     create_node(&((Node){.type = NODE_TYPE_STATEMENT_GOTO, .data.statement.statement_goto.label_node = label_name_node}));
+}
+
+void make_switch_case_node(Node* expression_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_CASE, .data.statement.statement_switch_case.expression_node = expression_node}));
+}
+
+void make_tenary_node(Node* true_expression, Node* false_expression){
+    create_node(&((Node){.type = NODE_TYPE_TERNARY, .data.tenary.true_expression = true_expression, .data.tenary.false_expression = false_expression}));
 }

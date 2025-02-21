@@ -246,6 +246,11 @@ void parse_label(History* History);
 
 void parse_goto(History* History);
 
+void parse_switch_case(History* history);
+
+void parse_for_tenary(History* history);
+
+
 Node* parser_blank_node;
 
 int parse(CompileProcess* compiler){
@@ -402,6 +407,9 @@ int parse_expression(History* history){ //parsing operator & merging w/ correct 
     if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "(")){
         parse_for_parenthesis(history);
     }
+    else if(ARE_STRINGS_EQUAL(peek_next_token()->value.string_val, "?")){
+        parse_for_tenary(history);
+    }
     else{
         parse_normal_expression(history);
     }
@@ -551,6 +559,10 @@ void parse_keyword(History* history){
     }
     else if(ARE_STRINGS_EQUAL(token->value.string_val, "goto")){
         parse_goto(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "case")){
+        parse_switch_case(history);
         return;
     }
     else{
@@ -947,6 +959,7 @@ enum{
     HISTORY_FLAG_INSIDE_STRUCTURE = 0b00001000,
     HISTORY_FLAG_INSIDE_FUNCTION_BODY = 0b00010000,
     HISTORY_FLAG_INSIDE_SWITCH = 0b00100000,
+    HISTORY_FLAG_PARENTHESES_IS_NOT_A_FUNCTION_CALL = 0b01000000,
 };
 
 
@@ -1516,4 +1529,30 @@ void parse_goto(History* History){
     expect_symbol(';');
     Node* label_node = pop_node();
     make_goto_node(label_node);
+}
+
+void parse_switch_case(History* history){
+    expect_keyword("case");
+    parse_expressionable_root(history);
+    Node* expression_node = pop_node();
+    expect_symbol(':');
+    make_switch_case_node(expression_node);
+    if(expression_node->type != NODE_TYPE_NUMBER){
+        compiler_error(current_process, "expecting a number for case");
+    }
+    Node* case_node = peek_node();
+    parser_register_case(history, case_node);
+}
+
+void parse_for_tenary(History* history){
+    Node* condition_node = pop_node();
+    expect_operator("?");
+    parse_expressionable_root(clone_history(history, HISTORY_FLAG_PARENTHESES_IS_NOT_A_FUNCTION_CALL));
+    Node* true_node = pop_node();
+    expect_symbol(':');
+    parse_expressionable_root(clone_history(history, HISTORY_FLAG_PARENTHESES_IS_NOT_A_FUNCTION_CALL));
+    Node* false_node = pop_node();
+    make_tenary_node(true_node, false_node);
+    Node* tenary_node = pop_node();
+    make_expression_node(condition_node, tenary_node, "?");
 }
