@@ -519,6 +519,10 @@ yyleng should return the length of the last matched text (yytext).
 //yyleng equivalent, it gets the length of the string value of the token
 int yyleng();
 
+typedef struct ParsedSwitchCase{
+    int index;
+}ParsedSwitchCase;
+
 typedef struct Node Node;
 enum{
 
@@ -632,6 +636,45 @@ struct Node{
             Node* body_node;
             size_t stack_size; //size of stack frame, sum of size of all variables inside this function.
         } function;
+        struct statement{
+            struct return_statement{
+                Node* expression;
+            } return_statement;
+            struct statement_if{
+                Node* condition_node;
+                Node* body_node;
+                Node* else_body_node;
+            } statement_if;
+            struct statement_else{
+                Node* body_node;
+            } statement_else;
+            struct statement_for{
+                Node* init_node;
+                Node* condition_node;
+                Node* increment_node;
+                Node* body_node;
+            }statement_for;
+            struct statement_while{
+                Node* condition_node;
+                Node* body_node;
+            } statement_while;
+            struct statement_do_while{
+                Node* condition_node;
+                Node* body_node;
+            } statement_do_while;
+            struct statement_switch{
+                Node* expression_node;
+                Node* body_node;
+                DynamicVector* cases;
+                bool has_default_case;
+            } statement_switch;
+            struct statement_goto{
+                Node* label_node;
+            } statement_goto;
+        } statement;
+        struct label{
+            Node* name_node;
+        } label;
     } data;
     int type;
     int flags;
@@ -843,7 +886,7 @@ void symbol_resolver_new_table(CompileProcess* process);
 
 bool is_token_identifier(Token* token);
 
-Node* make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node);
+void make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node);
 
 Symbol* symbol_resolver_get_symbol_for_native_function(CompileProcess* process, const char* name);
 
@@ -854,5 +897,28 @@ bool is_node_of_value_type(Node* node);
 bool is_node_expression_or_parenthesis(Node* node);
 
 void make_expression_parenthesis_node(Node* expression_node);
+
+void make_if_node(Node* condition_node, Node* body_node, Node* else_body_node);
+
+void make_else_node(Node* body_node);
+
+void make_return_node(Node* expression_node);
+
+
+void make_for_node(Node* init_node, Node* condition_node, Node* increment_node, Node* body_node);
+
+void make_while_node(Node* condition_node, Node* body_node);
+
+void make_do_while_node(Node* body_node, Node* condition_node);
+
+void make_switch_node(Node* expression_node, Node* body_node, DynamicVector* cases, bool has_default_case);
+
+void make_continue_node();
+
+void make_break_node();
+
+void make_label_node(Node* label_name_node);
+
+void make_goto_node(Node* label_name_node);
 
 #endif

@@ -1,3 +1,8 @@
 int main(int x){
-    x = (10+30);
+    switch(1) {
+        goto abc;
+        break;
+    }
+    abc:
+        x = 1;
 }

@@ -16,9 +16,18 @@ Node* create_node(Node* node);
 
 void print_node_vector(DynamicVector* node_vector);
 
+typedef struct HistoryCases{
+    DynamicVector* cases;
+    bool has_default_case;
+} HistoryCases;
+
 typedef struct History{ //so we'd be able to passs down commands to recursive functions
     int flags;
+    struct parser_history_switch{
+        HistoryCases cases_data;
+    } parser_history_switch;
 } History;
+
 
 History* begin_history(int flags);
 
@@ -194,8 +203,48 @@ void parse_for_parenthesis(History* history);
 void parser_deal_with_additional_parentheses();
 
 
+void parse_if_statement(History* history);
+
+void expect_keyword(const char* keyword);
 
 
+Node* parse_else_or_else_if(History* history);
+
+bool is_next_token_keyword(const char* keyword);
+
+Node* parse_else_statement(History* history);
+
+void parse_return_statement(History* history);
+
+
+void parse_for_statement(History* history);
+
+bool parse_for_loop_part(History* history);
+
+bool parse_for_loop_part_increment(History* history);
+
+void parse_keyword_parenthesis_expression(const char* keyword);
+
+void parse_while_statement(History* history);
+
+void parse_do_while_statement(History* history);
+
+
+void parse_switch_statement(History* history);
+
+struct parser_history_switch parse_new_switch_statement(History* history);
+
+void parser_end_switch_statement(struct parser_history_switch* switch_history);
+
+void parser_register_case(History* history, Node* case_node);
+
+void parse_continue_statement(History* history);
+
+void parse_break_statement(History* history);
+
+void parse_label(History* History);
+
+void parse_goto(History* History);
 
 Node* parser_blank_node;
 
@@ -283,7 +332,6 @@ void parse_single_token_to_node(){
 Node* create_node(Node* node){
     Node* node_created = malloc(sizeof(Node));
     memcpy(node_created, node, sizeof(Node));
-    #warning "set the binded to"
     node->BindedTo.body = parser_current_body_node;
     node->BindedTo.function = parser_current_function_node;
     push_node(node_created);
@@ -311,6 +359,7 @@ History* clone_history(History* history, int flags){
     History* new_history = calloc(1, sizeof(History));
     memcpy(new_history, history, sizeof(History));
     new_history->flags = flags;
+    new_history->parser_history_switch.cases_data = history->parser_history_switch.cases_data;
     return new_history;
 }
 
@@ -466,7 +515,49 @@ void parse_keyword(History* history){
     Token* token = peek_next_token();
     if(is_keyword_variable_modifier(token->value.string_val) || keyword_is_datatype(token->value.string_val)){
         parse_variable_or_function_or_struct_or_union(history);
+        return;
     }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "return")){
+        parse_return_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "if")){
+        parse_if_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "for")){
+        parse_for_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "while")){
+        parse_while_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "do")){
+        parse_do_while_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "switch")){
+        parse_switch_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "continue")){
+        parse_continue_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "break")){
+        parse_break_statement(history);
+        return;
+    }
+    else if(ARE_STRINGS_EQUAL(token->value.string_val, "goto")){
+        parse_goto(history);
+        return;
+    }
+    else{
+        compiler_error(current_process, "unknown keyword");
+    }
+
+    return;
 }
 
 static bool is_keyword_variable_modifier(const char* value){
@@ -855,6 +946,7 @@ enum{
     HISTORY_FLAG_IS_GLOBAL_SCOPE = 0b00000100,
     HISTORY_FLAG_INSIDE_STRUCTURE = 0b00001000,
     HISTORY_FLAG_INSIDE_FUNCTION_BODY = 0b00010000,
+    HISTORY_FLAG_INSIDE_SWITCH = 0b00100000,
 };
 
 
@@ -952,6 +1044,11 @@ void parse_symbol(){
         Node* body_node = pop_node();
         push_node(body_node);
     }
+    else if(is_next_token_symbol(':')){
+        parse_label(begin_history(0));
+        return;
+    }
+    compiler_error(current_process, "unknown symbol");
 }
 
 void parser_apppend_size_for_node(History* history, size_t* variable_size, Node* node){
@@ -1105,7 +1202,7 @@ void parse_body_multiple_statements(size_t* sum_of_var_size, DynamicVector* body
     while(!is_next_token_symbol('}')){
         parse_statement(clone_history(history, history->flags));
         statement_node = pop_node();
-        if(statement_node->type == NODE_TYPE_VARIABLE){
+        if(statement_node && statement_node->type == NODE_TYPE_VARIABLE){
             if(largest_possible_var_node == NULL || largest_possible_var_node->data.var.data_type.size <= statement_node->data.var.data_type.size){
                 largest_possible_var_node = statement_node;
             }
@@ -1234,3 +1331,189 @@ void parser_deal_with_additional_parentheses(){
     }
 }
 
+void parse_if_statement(History* history){
+    expect_keyword("if");
+    expect_operator("(");
+    parse_expressionable_root(history);
+    expect_symbol(')');
+    Node* condition_node = pop_node();
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    Node* body_node = pop_node();
+    make_if_node(condition_node, body_node, parse_else_or_else_if(history));
+}
+
+void expect_keyword(const char* keyword){
+    Token* token = get_next_token();
+    if(!token || token->type != TOKEN_TYPE_KEYWORD || !ARE_STRINGS_EQUAL(token->value.string_val, keyword)){
+        compiler_error(current_process, "expecting keyword %s", keyword);
+    }
+}
+
+Node* parse_else_or_else_if(History* history){
+    Node* node = NULL;
+    if(is_next_token_keyword("else")){
+        get_next_token();
+        if(is_next_token_keyword("if")){
+            parse_if_statement(clone_history(history, 0));
+            node = pop_node();
+        }
+        else{
+            node = parse_else_statement(clone_history(history, 0));
+        }
+    }
+    return node;
+}
+
+bool is_next_token_keyword(const char* keyword){
+    Token* token = peek_next_token();
+    return token && token->type == TOKEN_TYPE_KEYWORD && ARE_STRINGS_EQUAL(token->value.string_val, keyword);
+}
+
+Node* parse_else_statement(History* history){
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    Node* body_node = pop_node();
+    make_else_node(body_node);
+    return pop_node();
+}
+
+void parse_return_statement(History* history){
+    expect_keyword("return");
+    if(is_next_token_symbol(';')){
+        expect_symbol(';');
+        make_return_node(NULL);
+        return;
+    }
+    parse_expressionable_root(history);
+    Node* expression_node = pop_node();
+    make_return_node(expression_node);
+    expect_symbol(';');
+}
+
+void parse_for_statement(History* history){
+    Node* init_node = NULL;
+    Node* condition_node = NULL;
+    Node* increment_node = NULL;
+    Node* body_node = NULL;
+    expect_keyword("for");
+    expect_operator("(");
+    if(parse_for_loop_part(history)){
+        init_node = pop_node();
+    }
+    if(parse_for_loop_part(history)){
+        condition_node = pop_node();
+    }
+    if(parse_for_loop_part_increment(history)){
+        increment_node = pop_node();
+    }
+    expect_symbol(')');
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    body_node = pop_node();
+    make_for_node(init_node, condition_node, increment_node, body_node);
+}
+
+bool parse_for_loop_part(History* history){
+    if(is_next_token_symbol(';')){
+        get_next_token();
+        return false;
+    }
+    parse_expressionable_root(history);
+    expect_symbol(';');
+    return true;
+}
+
+bool parse_for_loop_part_increment(History* history){
+    if(is_next_token_symbol(')')){
+        return false;
+    }
+    parse_expressionable_root(history);
+    return true;
+}
+
+void parse_keyword_parenthesis_expression(const char* keyword){
+    expect_keyword(keyword);
+    expect_operator("(");
+    parse_expressionable_root(begin_history(0));
+    expect_symbol(')');
+}
+
+void parse_while_statement(History* history){
+    parse_keyword_parenthesis_expression("while");
+    Node* condition_node = pop_node();
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    Node* body_node = pop_node();
+    make_while_node(condition_node, body_node);
+}
+
+void parse_do_while_statement(History* history){
+    expect_keyword("do");
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    Node* body_node = pop_node();
+    parse_keyword_parenthesis_expression("while");
+    Node* condition_node = pop_node();
+    expect_symbol(';');
+    make_do_while_node(body_node, condition_node);
+}
+
+void parse_switch_statement(History* history){
+    struct parser_history_switch switch_history = parse_new_switch_statement(history);
+    parse_keyword_parenthesis_expression("switch");
+    Node* expression_node = pop_node();
+    size_t variable_size = 0;
+    parse_body(&variable_size, history);
+    Node* body_node = pop_node();
+    make_switch_node(expression_node, body_node, switch_history.cases_data.cases, switch_history.cases_data.has_default_case);
+    parser_end_switch_statement(&switch_history);
+}
+
+struct parser_history_switch parse_new_switch_statement(History* history){
+    memset(&history->parser_history_switch, 0, sizeof(struct parser_history_switch));
+    history->parser_history_switch.cases_data.cases = create_vector(sizeof(ParsedSwitchCase));
+    history->flags |= HISTORY_FLAG_INSIDE_SWITCH;
+    return history->parser_history_switch;
+}
+
+void parser_end_switch_statement(struct parser_history_switch* switch_history){
+    //do nothing
+}
+
+void parser_register_case(History* history, Node* case_node){
+    assert(history->flags & HISTORY_FLAG_INSIDE_SWITCH);
+    ParsedSwitchCase parsed_case;
+    #warning "to implement, must be set to case index"
+    parsed_case.index = 0;
+    push_element(history->parser_history_switch.cases_data.cases, &parsed_case);
+}
+
+void parse_continue_statement(History* history){
+    expect_keyword("continue");
+    expect_symbol(';');
+    make_continue_node();
+}
+
+void parse_break_statement(History* history){
+    expect_keyword("break");
+    expect_symbol(';');
+    make_break_node();
+}
+
+void parse_label(History* History){
+    expect_symbol(':');
+    Node* label_name_node = pop_node();
+    if(label_name_node->type != NODE_TYPE_IDENTIFIER){
+        compiler_error(current_process, "expecting a valid label name");
+    }
+    make_label_node(label_name_node);
+}
+
+void parse_goto(History* History){
+    expect_keyword("goto");
+    parse_identifier(begin_history(0));
+    expect_symbol(';');
+    Node* label_node = pop_node();
+    make_goto_node(label_node);
+}

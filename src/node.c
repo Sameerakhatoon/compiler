@@ -106,6 +106,59 @@ void print_node(Node* node, int depth) {
             printf("Node parentheses\n");
             print_node(node->data.parentheses.expression, depth + 1);
             break;
+        case NODE_TYPE_STATEMENT_IF:
+            printf("Node if\n");
+            print_node(node->data.statement.statement_if.condition_node, depth + 1);
+            print_node(node->data.statement.statement_if.body_node, depth + 1);
+            print_node(node->data.statement.statement_if.else_body_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_ELSE:
+            printf("Node else\n");
+            print_node(node->data.statement.statement_else.body_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_RETURN:
+            printf("Node return\n");
+            print_node(node->data.statement.return_statement.expression, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_FOR:
+            printf("Node for\n");
+            print_node(node->data.statement.statement_for.init_node, depth + 1);
+            print_node(node->data.statement.statement_for.condition_node, depth + 1);
+            print_node(node->data.statement.statement_for.increment_node, depth + 1);
+            print_node(node->data.statement.statement_for.body_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_WHILE:
+            printf("Node while\n");
+            print_node(node->data.statement.statement_while.condition_node, depth + 1);
+            print_node(node->data.statement.statement_while.body_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_DO_WHILE:
+            printf("Node do while\n");
+            print_node(node->data.statement.statement_while.condition_node, depth + 1);
+            print_node(node->data.statement.statement_while.body_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_SWITCH:
+            printf("Node switch\n");
+            print_node(node->data.statement.statement_switch.expression_node, depth + 1);
+            print_node(node->data.statement.statement_switch.body_node, depth + 1);
+            for(int i = 0; i < node->data.statement.statement_switch.cases->element_count; i++) {
+                print_node(*(Node**)get_element_at(node->data.statement.statement_switch.cases, i), depth + 1);
+            }
+            break;
+        case NODE_TYPE_STATEMENT_CONTINUE:
+            printf("Node continue\n");
+            break;
+        case NODE_TYPE_STATEMENT_BREAK:
+            printf("Node break\n");
+            break;
+        case NODE_TYPE_LABEL:
+            printf("Node label\n");
+            print_node(node->data.label.name_node, depth + 1);
+            break;
+        case NODE_TYPE_STATEMENT_GOTO:
+            printf("Node goto\n");
+            print_node(node->data.statement.statement_goto.label_node, depth + 1);
+            break;
         default:
             printf("Unknown node type\n");
             printf("Node type: %i\n", node->type);
@@ -202,9 +255,8 @@ Node* get_node_form_a_symbol(Symbol* symbol){
     return symbol->data;
 }
 
-Node* make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node){
+void make_function_node(DataType* return_type, const char* name, DynamicVector* parameters, Node* body_node){
     Node* function_node = create_node(&((Node){.type = NODE_TYPE_FUNCTION, .data.function.return_type = return_type, .data.function.name = name, .data.function.function_args = parameters, .data.function.body_node = body_node, .data.function.function_args.stack_addition = DATA_SIZE_DDWORD}));
-    return function_node;
     #warning "don't forget to build frame elements"
 }
 
@@ -225,4 +277,48 @@ bool is_node_expression_or_parenthesis(Node* node){
 
 void make_expression_parenthesis_node(Node* expression_node){
     create_node(&((Node){.type = NODE_TYPE_EXPRESSION_PARENTHESES, .data.parentheses.expression = expression_node}));
+}
+
+void make_if_node(Node* condition_node, Node* body_node, Node* else_body_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_IF, .data.statement.statement_if.condition_node = condition_node, .data.statement.statement_if.body_node = body_node, .data.statement.statement_if.else_body_node = else_body_node}));
+}
+
+void make_else_node(Node* body_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_ELSE, .data.statement.statement_else.body_node = body_node}));
+}
+
+void make_return_node(Node* expression_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_RETURN, .data.statement.return_statement.expression = expression_node}));
+}
+
+void make_for_node(Node* init_node, Node* condition_node, Node* increment_node, Node* body_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_FOR, .data.statement.statement_for.init_node = init_node, .data.statement.statement_for.condition_node = condition_node, .data.statement.statement_for.increment_node = increment_node, .data.statement.statement_for.body_node = body_node}));
+}
+
+void make_while_node(Node* condition_node, Node* body_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_WHILE, .data.statement.statement_while.condition_node = condition_node, .data.statement.statement_while.body_node = body_node}));
+}
+
+void make_do_while_node(Node* body_node, Node* condition_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_DO_WHILE, .data.statement.statement_while.condition_node = condition_node, .data.statement.statement_while.body_node = body_node}));
+}
+
+void make_switch_node(Node* expression_node, Node* body_node, DynamicVector* cases, bool has_default_case){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_SWITCH, .data.statement.statement_switch.expression_node = expression_node, .data.statement.statement_switch.body_node = body_node, .data.statement.statement_switch.cases = cases, .data.statement.statement_switch.has_default_case = has_default_case}));
+}
+
+void make_continue_node(){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_CONTINUE}));
+}
+
+void make_break_node(){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_BREAK}));
+}
+
+void make_label_node(Node* label_name_node){
+    create_node(&((Node){.type = NODE_TYPE_LABEL, .data.label.name_node = label_name_node}));
+}
+
+void make_goto_node(Node* label_name_node){
+    create_node(&((Node){.type = NODE_TYPE_STATEMENT_GOTO, .data.statement.statement_goto.label_node = label_name_node}));
 }
