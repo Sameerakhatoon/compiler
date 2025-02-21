@@ -535,6 +535,8 @@ typedef struct Node Node;
 enum{
 
 
+    
+    
     NODE_TYPE_EXPRESSION,
     NODE_TYPE_EXPRESSION_PARENTHESES,
     NODE_TYPE_NUMBER,
@@ -586,7 +588,7 @@ typedef struct DataType{
     } array;
 }DataType;
 enum{
-    FUNCTION_NODE_FLAG_IS_NATIVE = 0b00000001,
+    FUNCTION_NODE_FLAG_IS_NATIVE = 1 << 2,
 };
 struct Node{
     union{
@@ -690,6 +692,11 @@ struct Node{
             DataType data_type;
             Node* operand_node;
         } cast;
+        struct Union{
+            const char* name;
+            Node* body_node;
+            Node* variable;
+        } Union;
     } data;
     int type;
     int flags;
@@ -728,9 +735,9 @@ void print_node(Node* node, int depth);
 void print_node_vector(DynamicVector* node_vector);
 
 enum{
-    NODE_FLAG_INSIDE_EXPRESSION = 0b00000001,
-    NODE_FLAG_IS_FORWARD_DECLARATION = 0b00000010,
-    NODE_FLAG_HAS_VARIABLE_COMBINED = 0b00000100,
+    NODE_FLAG_INSIDE_EXPRESSION = 1 << 3,
+    NODE_FLAG_IS_FORWARD_DECLARATION = 1 << 4,
+    NODE_FLAG_HAS_VARIABLE_COMBINED = 1 << 5,
 };
 
 Node* peek_node_expressionable_or_null();
@@ -755,17 +762,17 @@ typedef struct ExpressionableOperatorPrecedanceGroup{
 bool keyword_is_datatype(const char* value);
 
 enum{
-    DATATYPE_FLAG_IS_SIGNED = 0b00000001,
-    DATATYPE_FLAG_IS_STATIC = 0b00000010,
-    DATATYPE_FLAG_IS_CONST = 0b00000100,
-    DATATYPE_FLAG_IS_POINTER = 0b00001000,
-    DATATYPE_FLAG_IS_ARRAY = 0b00010000,
-    DATATYPE_FLAG_IS_EXTERN = 0b00100000,
-    DATATYPE_FLAG_IS_RESTRICT = 0b01000000,
-    DATATYPE_FLAG_IGNORE_TYPE_CHECK = 0b10000000,
-    DATATYPE_FLAG_IS_SECONDARY = 0b100000000,
-    DATATYPE_FLAG_STRUCT_OR_UNION_NO_NAME = 0b1000000000,
-    DATATYPE_FLAG_IS_LITERAL = 0b10000000000,
+    DATATYPE_FLAG_IS_SIGNED = 1 << 6,
+    DATATYPE_FLAG_IS_STATIC = 1 << 7,
+    DATATYPE_FLAG_IS_CONST = 1 << 8,
+    DATATYPE_FLAG_IS_POINTER = 1 << 9,
+    DATATYPE_FLAG_IS_ARRAY = 1 << 10,
+    DATATYPE_FLAG_IS_EXTERN = 1 << 11,
+    DATATYPE_FLAG_IS_RESTRICT = 1 << 12,
+    DATATYPE_FLAG_IGNORE_TYPE_CHECK = 1 << 13,
+    DATATYPE_FLAG_IS_SECONDARY = 1 << 14,
+    DATATYPE_FLAG_STRUCT_OR_UNION_NO_NAME = 1 << 15,
+    DATATYPE_FLAG_IS_LITERAL = 1 << 16,
 };
 
 enum{
@@ -941,5 +948,75 @@ void make_switch_case_node(Node* expression_node);
 void make_tenary_node(Node* true_expression, Node* false_expression);
 
 void make_cast_node(DataType* data_type, Node* operand_node);
+
+typedef struct Fixup Fixup;
+
+typedef struct FixupSystem FixupSystem;
+
+typedef struct FixupConfig FixupConfig;
+
+typedef bool(*FIXUP_FIX)(Fixup* fixup);
+
+typedef void(*FIXUP_END)(Fixup* fixup);
+
+enum{
+    FIXUP_FLAG_RESOLVED = 1 << 1,
+};
+
+
+typedef struct FixupConfig {
+    FIXUP_FIX fix;
+    FIXUP_END end;
+    void* private_data;
+}FixupConfig;
+
+typedef struct Fixup {
+    int flags;
+    FixupSystem* system;
+    FixupConfig config;
+}Fixup;
+
+typedef struct FixupSystem {
+    DynamicVector* fixups;
+}FixupSystem;
+
+
+typedef bool(*FIXUP_FIX)(Fixup* fixup);
+
+typedef void(*FIXUP_END)(Fixup* fixup);
+
+
+FixupSystem* create_new_fixup_system();
+
+FixupConfig* get_fixup_config(Fixup* fixup);
+
+void free_fixup(Fixup* fixup);
+
+void free_fixups(FixupSystem* system);
+
+void start_iterating_fixups(FixupSystem* system);
+
+Fixup* next_fixup(FixupSystem* system);
+
+void free_fixup_system(FixupSystem* system);
+
+int get_count_of_unresolved_fixups(FixupSystem* system);
+
+Fixup* register_fixup(FixupSystem* system, FixupConfig* config);
+
+bool is_fixup_resolved(Fixup* fixup);
+
+void* return_fixup_private_data(Fixup* fixup);
+
+bool is_fixup_system_resolved(FixupSystem* system);
+
+void make_union_node(const char* name, Node* body_node);
+
+
+bool is_array_node(Node* node);
+
+bool is_node_expression(Node* node, const char* operator);
+
+bool is_assignment_node(Node* node);
 
 #endif

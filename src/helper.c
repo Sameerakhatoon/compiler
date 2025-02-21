@@ -70,8 +70,8 @@ Node* get_variable_struct_or_union_body_node(Node* node){
     if(node->data.var.data_type.type == DATA_TYPE_STRUCT){
         return node->data.var.data_type.data.struct_node->data.structure.body_node;
     }
-    //return union body node
-    #warning "union body node not implemented"
-    printf("union body node not implemented\n");
-    exit(1);
+    if(node->data.var.data_type.type == DATA_TYPE_UNION){
+        return node->data.var.data_type.data.union_node->data.Union.body_node;
+    }
+    return NULL;
 }

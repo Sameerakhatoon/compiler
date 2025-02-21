@@ -54,12 +54,12 @@ void symbol_resolver_pop_table(CompileProcess* process){
 
 Symbol* symbol_resolver_get_symbol(CompileProcess* process, const char* name){
     set_peek_index(process->symbols.current_active_symbol_table, 0);
-    Symbol* symbol = get_last_element_pointer(process->symbols.current_active_symbol_table);
+    Symbol* symbol = peek_pointer(process->symbols.current_active_symbol_table);
     while(symbol){
         if(ARE_STRINGS_EQUAL(symbol->name, name)){
             break;
         }
-        symbol = get_last_element_pointer(process->symbols.current_active_symbol_table);
+        symbol = peek_pointer(process->symbols.current_active_symbol_table);
     }
     return symbol;
 }
@@ -110,7 +110,10 @@ void symbol_resolver_for_struct_node(CompileProcess* process, Node* node){
 }
 
 void symbol_resolver_for_union_node(CompileProcess* process, Node* node){
-    compiler_error(process, "Union nodes are not supported yet");
+    if(node->flags & NODE_FLAG_IS_FORWARD_DECLARATION){
+        return;
+    }
+    symbol_resolver_register_symbol(process, node->data.Union.name, SYMBOL_TYPE_NODE, node);
 }
 
 void symbol_resolver_build_for_node(CompileProcess* process, Node* node){

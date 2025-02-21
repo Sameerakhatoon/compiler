@@ -365,7 +365,7 @@ void* get_vector_data_end(DynamicVector* vector){
 
 void move_peek_pointer_backward(DynamicVector* vector)
 {
-    if (vector->peek_index > 0)
+    if (vector->peek_index >= 0)
     {
         vector->peek_index--;
     }

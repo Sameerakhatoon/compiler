@@ -48,7 +48,7 @@ void parse_operator_expression(History* history, const char* operator);
 
 void parser_reorder_expression(Node** node_out);
 
-static bool does_left_operator_have_higher_precedence(char* left_operator, char* right_operator);
+static bool does_left_operator_have_higher_precedence(const char* left_operator, const char* right_operator);
 
 static int parser_get_precedence_for_operator(const char* operator, ExpressionableOperatorPrecedanceGroup** group_out);
 
@@ -256,20 +256,42 @@ void parse_for_array(History* history);
 
 void parse_for_cast();
 
+bool is_datatype_struct_node_fixup(Fixup* fixup);
+
+void datatype_struct_node_end(Fixup* fixup);
+
+void parse_forward_declaration(DataType* datatype);
+
+void parse_union_no_scope(DataType* datatype, bool is_forward_declaration);
+
+void parse_union(DataType* datatype);
+
+
+size_t get_size_of_union(const char* name);
+
+Node* get_union_node_for_name(CompileProcess* process, const char* name);
+
+void parser_move_node_right_left_to_left(Node* node);
+
 Node* parser_blank_node;
+FixupSystem* parser_fixup_system;
+
 
 int parse(CompileProcess* compiler){
     create_root_scope(compiler);
     current_process = compiler;
     set_node_vectors(current_process->node_vector, current_process->node_tree_vector);
     parser_blank_node = create_node(&((Node){.type = NODE_TYPE_BLANK}));
+    parser_fixup_system = create_new_fixup_system();
     parser_last_token = NULL;
     Node* node = NULL;
     set_peek_index(current_process->token_vector, 0);
     while(parse_next_token() == 0){
         //parse the next token
-        node = peek_node(); //at this point, the node should be the last node, which is the root of the tree push_element(current_process->node_tree_vector, &node);
+        node = peek_node(); //at this point, the node should be the last node, which is the root of the tree 
+        push_element(current_process->node_tree_vector, &node);
     }
+    assert(is_fixup_system_resolved(parser_fixup_system));
     return PARSER_SUCCESS;
 }
 
@@ -429,7 +451,7 @@ int parse_expression(History* history){ //parsing operator & merging w/ correct 
 
 void parse_normal_expression(History* history){
     Token* token = peek_next_token(); //this is the operator
-    char* operator = token->value.string_val;
+    const char* operator = token->value.string_val;
     Node* left_node = peek_node_expressionable_or_null();
     if(!left_node){
         return;
@@ -468,7 +490,7 @@ void parser_reorder_expression(Node** node_out){ //node_out refers to the expres
     //EXP(EXP(50*10)+20)
     //shift child operator(right) to root operator(left)
     if(node->data.expression.left->type != NODE_TYPE_EXPRESSION && node->data.expression.right && node->data.expression.right->type == NODE_TYPE_EXPRESSION){
-        char* right_operator = node->data.expression.right->data.expression.operator;
+        const char* right_operator = node->data.expression.right->data.expression.operator;
         //functions to determine the priority of the operator, is it the root operator(* in eg) or the child operator(+ in eg)
         if(does_left_operator_have_higher_precedence(node->data.expression.operator, right_operator)){
             parser_node_shift_right_to_left(node);
@@ -476,10 +498,13 @@ void parser_reorder_expression(Node** node_out){ //node_out refers to the expres
             parser_reorder_expression(&node->data.expression.right);
         }
     }
+    if((is_array_node(node->data.expression.left) || is_assignment_node(node->data.expression.right)) || ((is_node_expression(node->data.expression.left, "()")) && is_node_expression(node->data.expression.right, ","))){
+        parser_move_node_right_left_to_left(node);
+    }
 
 }
 
-static bool does_left_operator_have_higher_precedence(char* left_operator, char* right_operator){
+static bool does_left_operator_have_higher_precedence(const char* left_operator, const char* right_operator){
     ExpressionableOperatorPrecedanceGroup* left_group = NULL;
     ExpressionableOperatorPrecedanceGroup* right_group = NULL;
     if(ARE_STRINGS_EQUAL(left_operator, right_operator)){
@@ -599,6 +624,10 @@ void parse_variable_or_function_or_struct_or_union(History* history){
         Node* struct_or_union_node = pop_node();
         symbol_resolver_build_for_node(current_process, struct_or_union_node);
         push_node(struct_or_union_node);
+        return;
+    }
+    if(is_next_token_symbol(';')){
+        parse_forward_declaration(&datatype);
         return;
     }
     parser_ignore_int(&datatype);
@@ -763,7 +792,9 @@ void parser_datatype_init_type_and_size(Token* datatype_token, Token* datatype_s
             datatype_out->data.struct_node = get_struct_node_for_name(current_process, datatype_token->value.string_val);
             break;
         case DATA_TYPE_EXPECT_UNION:
-            compiler_error(current_process, "struct or union are currently not supported");
+            datatype_out->type = DATA_TYPE_UNION;
+            datatype_out->size = get_size_of_union(datatype_token->value.string_val);
+            datatype_out->data.union_node = get_union_node_for_name(current_process, datatype_token->value.string_val);
             break;
         default:
             compiler_error(current_process, "BUG: unknown expected type");
@@ -849,7 +880,6 @@ bool parser_is_init_valid_after_datatype(DataType* datatype){
 }
 
 void parse_variable(DataType* datatype, Token* name_token, History* history){
-    #warning "check for array brackets"
     Node* value_node = NULL;
     ArrayBrackets* array_brackets = NULL;
     if(is_next_token_operator("[")){
@@ -881,6 +911,9 @@ void make_variable_node_and_register(History* history, DataType* datatype, Token
     push_parser_scope(create_new_parser_scope_entity(variable_node, variable_node->data.var.aligned_offset, 0), variable_node->data.var.data_type.size);
     push_node(variable_node);
 }
+typedef struct DatatypeStructNodeFixPrivate{
+    Node* node_to_be_fixed;
+}DatatypeStructNodeFixPrivate;
 
 void make_variable_node(DataType* datatype, Token* name_token, Node* value_node){
     const char* name_string = NULL;
@@ -888,6 +921,12 @@ void make_variable_node(DataType* datatype, Token* name_token, Node* value_node)
         name_string = name_token->value.string_val;
     }
     create_node(&((Node){.type = NODE_TYPE_VARIABLE, .data.var.data_type = *datatype, .data.var.name = name_string, .data.var.value = value_node}));
+    Node* variable_node = peek_node_or_null();
+    if((variable_node->data.var.data_type.type == DATA_TYPE_STRUCT) && !variable_node->data.var.data_type.data.struct_node){
+        DatatypeStructNodeFixPrivate* fix_private = calloc(1, sizeof(DatatypeStructNodeFixPrivate));
+        fix_private->node_to_be_fixed = variable_node;
+        register_fixup(parser_fixup_system, &(FixupConfig){.fix = is_datatype_struct_node_fixup, .end = datatype_struct_node_end, .private_data = fix_private});
+    }
 }
 
 void make_variable_list_node(DynamicVector* variable_list){
@@ -1019,7 +1058,11 @@ void parse_body(size_t* sum_of_var_size, History* history){
     }
     parse_body_multiple_statements(sum_of_var_size, body_vector, history);
     parser_finish_scope();
-    #warning "don't forget to adjust function stack size"
+    if(sum_of_var_size){
+        if(history->flags & HISTORY_FLAG_INSIDE_FUNCTION_BODY){
+            parser_current_function_node->data.function.stack_size += *sum_of_var_size;
+        }
+    }
 }
 
 // extern Node* parser_current_body_node;
@@ -1110,10 +1153,6 @@ void parser_finalize_body(History* history, Node* body_node, DynamicVector* body
     body_node->data.body.padded = padded;
     //compute correct padding
 
-}
-
-void parse_union(DataType* datatype){
-    compiler_error(current_process, "union not implemented");
 }
 
 void parser_apppend_size_for_node_struct_or_union(History* history, size_t* variable_size, Node* node){
@@ -1603,4 +1642,94 @@ void parse_for_cast(){
     parse_expressionable_root(begin_history(0));
     Node* operand_node = pop_node();
     make_cast_node(&data_type, operand_node);
+}
+
+bool is_datatype_struct_node_fixup(Fixup* fixup){
+    DatatypeStructNodeFixPrivate* fix_private = return_fixup_private_data(fixup);
+    DataType* datatype = &fix_private->node_to_be_fixed->data.var.data_type;
+    datatype->type = DATA_TYPE_STRUCT;
+    datatype->size = get_size_of_struct(datatype->name);
+    datatype->data.struct_node = get_struct_node_for_name(current_process, datatype->name);
+    if(!datatype->data.struct_node){
+        return false;
+    }
+    return true;
+}
+
+void datatype_struct_node_end(Fixup* fixup){
+    free(return_fixup_private_data(fixup));
+}
+
+void parse_forward_declaration(DataType* datatype){
+    parse_struct(datatype);
+}
+
+void parse_union_no_scope(DataType* datatype, bool is_forward_declaration){
+    Node* body_node = NULL;
+    size_t body_variable_size = 0;
+    if(!is_forward_declaration){
+        parse_body(&body_variable_size, begin_history(HISTORY_FLAG_INSIDE_UNION));
+        body_node = pop_node();
+    }
+    make_union_node(datatype->name, body_node);
+    Node* union_node = pop_node();
+    if(body_node){
+        datatype->size = body_node->data.body.size;
+    }
+    if(peek_next_token()->type == TOKEN_TYPE_IDENTIFIER){
+        Token* variable_name = get_next_token();
+        union_node->flags |= NODE_FLAG_HAS_VARIABLE_COMBINED;
+        if(datatype->flags & DATATYPE_FLAG_STRUCT_OR_UNION_NO_NAME){
+            datatype->name = variable_name->value.string_val;
+            datatype->flags &= ~DATATYPE_FLAG_STRUCT_OR_UNION_NO_NAME;
+            union_node->data.Union.name = variable_name->value.string_val;
+        }
+        make_variable_node_and_register(begin_history(0), datatype, variable_name, NULL);
+        union_node->data.Union.variable = pop_node();
+    }
+    expect_symbol(';');
+    push_node(union_node);
+}
+
+void parse_union(DataType* datatype){
+    bool is_forward_declaration = !is_token_symbol(peek_next_token(), '{');
+    if(!is_forward_declaration){
+        parser_new_scope();
+    }
+    parse_union_no_scope(datatype, is_forward_declaration);
+    if(!is_forward_declaration){
+        parser_finish_scope();
+    }
+}
+
+size_t get_size_of_union(const char* name){
+    Symbol* symbol = symbol_resolver_get_symbol(current_process, name);
+    if(!symbol){
+        return 0;
+    }
+    assert(symbol->type == SYMBOL_TYPE_NODE);
+    Node* node = symbol->data;
+    assert(node->type == NODE_TYPE_UNION);
+    return node->data.body.size;
+}
+
+Node* get_union_node_for_name(CompileProcess* process, const char* name){
+    Node* node = get_node_from_symbol(process, name);
+    if(!node){
+        return NULL;
+    }
+    if(node->type != NODE_TYPE_UNION){
+        return NULL;
+    }
+    return node;
+}
+
+void parser_move_node_right_left_to_left(Node* node){
+    make_expression_node(node->data.expression.left, node->data.expression.right->data.expression.left, node->data.expression.operator);
+    Node* new_node = pop_node();
+    //still need to deal w/ right node
+    const char* new_operator = node->data.expression.right->data.expression.operator;
+    node->data.expression.left = new_node;
+    node->data.expression.right = node->data.expression.right->data.expression.right;
+    node->data.expression.operator = new_operator;
 }

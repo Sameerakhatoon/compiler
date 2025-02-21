@@ -170,11 +170,32 @@ void print_node(Node* node, int depth) {
             break;
         case NODE_TYPE_CAST:
             printf("Node cast\n");
+            print_tabs(depth+1);
             printf("Data type: %s\n", node->data.cast.data_type.name);
             print_node(node->data.cast.operand_node, depth + 1);
             break;
+        case NODE_TYPE_STRUCT:
+            printf("Node struct\n");
+            print_tabs(depth+1);
+            printf("Name: %s\n", node->data.structure.name);
+            print_node(node->data.structure.body_node, depth + 1);
+            break;
+        case NODE_TYPE_BLANK:
+            printf("Node blank\n");
+            break;
+        case NODE_TYPE_UNION:
+            printf("Node union\n");
+            print_tabs(depth+1);
+            printf("Name: %s\n", node->data.Union.name);
+            print_node(node->data.Union.body_node, depth + 1);
+            break;
+        case NODE_TYPE_BRACKET:
+            printf("Node bracket\n");
+            print_node(node->data.bracket.inner, depth + 1);
+            break;
         default:
             printf("Unknown node type\n");
+            print_tabs(depth+1);
             printf("Node type: %i\n", node->type);
     }
 }
@@ -216,8 +237,7 @@ Node* get_variable_node(Node* node){
             variable_node = node->data.structure.variable;
             break;
         case NODE_TYPE_UNION:
-            // variable_node = node->data.union.variable;
-            assert(1==0 && "union not implemented\n");
+            variable_node = node->data.Union.variable;
             break;
     }
     return variable_node;
@@ -346,5 +366,28 @@ void make_tenary_node(Node* true_expression, Node* false_expression){
 }
 
 void make_cast_node(DataType* data_type, Node* operand_node){
-    create_node(&((Node){.type = NODE_TYPE_CAST, .data.cast.data_type = data_type, .data.cast.operand_node = operand_node}));
+    create_node(&((Node){.type = NODE_TYPE_CAST, .data.cast.data_type = data_type, .data.cast.operand_node = operand_node, .data.cast.data_type.name = data_type->name}));
+}
+
+void make_union_node(const char* name, Node* body_node){
+    int flags = 0;
+    if(!body_node){
+        flags |= NODE_FLAG_IS_FORWARD_DECLARATION;
+    }
+    create_node(&((Node){.type = NODE_TYPE_UNION, .data.Union.name = name, .data.Union.body_node = body_node, .flags = flags}));
+}
+
+bool is_array_node(Node* node){
+    return is_node_expression(node, "[]");
+}
+
+bool is_node_expression(Node* node, const char* operator){
+    return node->type == NODE_TYPE_EXPRESSION && ARE_STRINGS_EQUAL(node->data.expression.operator, operator);
+}
+
+bool is_assignment_node(Node* node){
+    if(node->type!=NODE_TYPE_EXPRESSION){
+        return false;
+    }
+    return ARE_STRINGS_EQUAL(node->data.expression.operator, "=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "+=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "-=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "*=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "/=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "%=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "&=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "|=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "^=") || ARE_STRINGS_EQUAL(node->data.expression.operator, "<<=") || ARE_STRINGS_EQUAL(node->data.expression.operator, ">>=");
 }
